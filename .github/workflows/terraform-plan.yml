@@ -7,6 +7,20 @@ on:
       - "modules/**"
       - "lambda/**"
       - ".github/workflows/**"
+  workflow_dispatch:
+    inputs:
+      target_ref:
+        description: "Checkout ref (branch/tag/commit). Empty = default branch"
+        required: false
+        default: ""
+      tfstate_key:
+        description: "S3 backend key"
+        required: false
+        default: "minecraft/terraform.tfstate"
+      aws_region:
+        description: "AWS region"
+        required: false
+        default: "ap-northeast-1"
 
 permissions:
   id-token: write
@@ -25,7 +39,10 @@ jobs:
         shell: bash
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_ref }}
 
       - name: Build Lambda zip
         working-directory: lambda/discord-control
@@ -39,7 +56,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ap-northeast-1
+          aws-region: ${{ inputs.aws_region || 'ap-northeast-1' }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -49,10 +66,13 @@ jobs:
       - name: Terraform Init
         working-directory: environment
         run: |
+          TFSTATE_KEY="${{ inputs.tfstate_key }}"
+          if [ -z "$TFSTATE_KEY" ]; then TFSTATE_KEY="minecraft/terraform.tfstate"; fi
+
           terraform init \
             -backend-config="bucket=${{ secrets.TFSTATE_BUCKET }}" \
-            -backend-config="key=minecraft/terraform.tfstate" \
-            -backend-config="region=ap-northeast-1"
+            -backend-config="key=${TFSTATE_KEY}" \
+            -backend-config="region=${{ inputs.aws_region || 'ap-northeast-1' }}"
 
       - name: Terraform Fmt
         working-directory: environment
