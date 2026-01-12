@@ -11,7 +11,10 @@ data "aws_iam_policy_document" "task_exec_assume" {
   statement {
     effect  = "Allow"
     actions = ["sts:AssumeRole"]
-    principals { type = "Service", identifiers = ["ecs-tasks.amazonaws.com"] }
+    principals {
+      type        = "Service"
+      identifiers = ["ecs-tasks.amazonaws.com"]
+    }
   }
 }
 
@@ -65,13 +68,13 @@ locals {
 }
 
 resource "aws_ecs_task_definition" "minecraft" {
-  for_each               = var.sizes
-  family                 = "${var.name_prefix}-minecraft-${each.key}"
+  for_each                 = var.sizes
+  family                   = "${var.name_prefix}-minecraft-${each.key}"
   requires_compatibilities = ["FARGATE"]
-  network_mode           = "awsvpc"
-  cpu                    = tostring(each.value.cpu)
-  memory                 = tostring(each.value.memory)
-  execution_role_arn     = aws_iam_role.task_execution.arn
+  network_mode             = "awsvpc"
+  cpu                      = tostring(each.value.cpu)
+  memory                   = tostring(each.value.memory)
+  execution_role_arn       = aws_iam_role.task_execution.arn
 
   volume {
     name = "efs-data"
@@ -86,8 +89,8 @@ resource "aws_ecs_task_definition" "minecraft" {
   }
 
   container_definitions = jsonencode([{
-    name  = "minecraft"
-    image = "itzg/minecraft-server:latest"
+    name      = "minecraft"
+    image     = "itzg/minecraft-server:latest"
     essential = true
 
     portMappings = [{
@@ -121,16 +124,16 @@ locals {
 }
 
 resource "aws_ecs_service" "this" {
-  name            = "${var.name_prefix}-minecraft"
-  cluster         = aws_ecs_cluster.this.id
-  desired_count   = 0
-  launch_type     = "FARGATE"
+  name          = "${var.name_prefix}-minecraft"
+  cluster       = aws_ecs_cluster.this.id
+  desired_count = 0
+  launch_type   = "FARGATE"
 
   task_definition = aws_ecs_task_definition.minecraft[local.default_size].arn
 
   network_configuration {
-    subnets         = var.public_subnet_ids
-    security_groups = [var.ecs_sg_id]
+    subnets          = var.public_subnet_ids
+    security_groups  = [var.ecs_sg_id]
     assign_public_ip = true
   }
 

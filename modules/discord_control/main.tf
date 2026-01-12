@@ -11,15 +11,15 @@ resource "aws_lambda_function" "this" {
 
   environment {
     variables = {
-      DISCORD_PUBLIC_KEY   = var.discord_public_key
-      ALLOWED_ROLE_ID      = var.allowed_role_id
+      DISCORD_PUBLIC_KEY = var.discord_public_key
+      ALLOWED_ROLE_ID    = var.allowed_role_id
 
-      ECS_CLUSTER_ARN      = var.ecs_cluster_arn
-      ECS_SERVICE_NAME     = var.ecs_service_name
+      ECS_CLUSTER_ARN  = var.ecs_cluster_arn
+      ECS_SERVICE_NAME = var.ecs_service_name
 
-      TASKDEF_SMALL        = lookup(var.taskdef_arns_by_size, "small", "")
-      TASKDEF_MEDIUM       = lookup(var.taskdef_arns_by_size, "medium", "")
-      TASKDEF_LARGE        = lookup(var.taskdef_arns_by_size, "large", "")
+      TASKDEF_SMALL  = lookup(var.taskdef_arns_by_size, "small", "")
+      TASKDEF_MEDIUM = lookup(var.taskdef_arns_by_size, "medium", "")
+      TASKDEF_LARGE  = lookup(var.taskdef_arns_by_size, "large", "")
     }
   }
 }

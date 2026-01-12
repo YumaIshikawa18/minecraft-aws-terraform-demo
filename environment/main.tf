@@ -23,11 +23,11 @@ module "network" {
 module "efs" {
   source = "../modules/efs"
 
-  name_prefix  = var.name_prefix
-  vpc_id       = module.network.vpc_id
-  subnet_ids   = module.network.private_subnet_ids
-  efs_sg_id    = module.network.efs_sg_id
-  ecs_sg_id    = module.network.ecs_sg_id
+  name_prefix = var.name_prefix
+  vpc_id      = module.network.vpc_id
+  subnet_ids  = module.network.private_subnet_ids
+  efs_sg_id   = module.network.efs_sg_id
+  ecs_sg_id   = module.network.ecs_sg_id
 }
 
 module "minecraft" {
@@ -58,19 +58,19 @@ module "iam_control" {
 module "discord_control" {
   source = "../modules/discord_control"
 
-  name_prefix         = var.name_prefix
-  aws_region          = var.aws_region
-  lambda_role_arn     = module.iam_control.lambda_role_arn
+  name_prefix     = var.name_prefix
+  aws_region      = var.aws_region
+  lambda_role_arn = module.iam_control.lambda_role_arn
 
   # build成果物（workflowで生成）
-  lambda_zip_path     = var.lambda_zip_path
+  lambda_zip_path = var.lambda_zip_path
 
   # Discord
-  discord_public_key  = var.discord_public_key
-  allowed_role_id     = var.allowed_role_id
+  discord_public_key = var.discord_public_key
+  allowed_role_id    = var.allowed_role_id
 
   # ECS対象
-  ecs_cluster_arn     = module.minecraft.ecs_cluster_arn
-  ecs_service_name    = module.minecraft.ecs_service_name
+  ecs_cluster_arn      = module.minecraft.ecs_cluster_arn
+  ecs_service_name     = module.minecraft.ecs_service_name
   taskdef_arns_by_size = module.minecraft.taskdef_arns_by_size
 }
