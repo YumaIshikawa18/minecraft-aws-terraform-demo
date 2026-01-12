@@ -1,0 +1,9 @@
+{
+  "name": "discord-control",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/client-ecs": "^3.600.0",
+    "tweetnacl": "^1.0.3"
+  }
+}

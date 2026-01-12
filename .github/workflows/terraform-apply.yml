@@ -1,0 +1,60 @@
+name: terraform-apply
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "environment/**"
+      - "modules/**"
+      - "lambda/**"
+      - ".github/workflows/**"
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: terraform
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Lambda zip
+        working-directory: lambda/discord-control
+        run: |
+          npm ci
+          rm -rf dist
+          mkdir -p dist
+          zip -r dist/discord-control.zip index.mjs node_modules package.json
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ap-northeast-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Terraform Init
+        working-directory: environment
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TFSTATE_BUCKET }}" \
+            -backend-config="key=minecraft/terraform.tfstate" \
+            -backend-config="region=ap-northeast-1"
+
+      - name: Terraform Apply
+        working-directory: environment
+        run: terraform apply -auto-approve
