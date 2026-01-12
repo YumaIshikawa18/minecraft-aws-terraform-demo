@@ -8,7 +8,7 @@ resource "aws_vpc" "this" {
   cidr_block           = "10.50.0.0/16"
   enable_dns_hostnames = true
   enable_dns_support   = true
-  tags = { Name = "${var.name_prefix}-vpc" }
+  tags                 = { Name = "${var.name_prefix}-vpc" }
 }
 
 resource "aws_internet_gateway" "this" {
@@ -23,7 +23,7 @@ resource "aws_subnet" "public" {
   availability_zone       = each.key
   cidr_block              = cidrsubnet(aws_vpc.this.cidr_block, 8, each.value)
   map_public_ip_on_launch = true
-  tags = { Name = "${var.name_prefix}-public-${each.key}" }
+  tags                    = { Name = "${var.name_prefix}-public-${each.key}" }
 }
 
 resource "aws_route_table" "public" {
@@ -49,7 +49,7 @@ resource "aws_subnet" "private" {
   vpc_id            = aws_vpc.this.id
   availability_zone = each.key
   cidr_block        = cidrsubnet(aws_vpc.this.cidr_block, 8, each.value + 10)
-  tags = { Name = "${var.name_prefix}-private-${each.key}" }
+  tags              = { Name = "${var.name_prefix}-private-${each.key}" }
 }
 
 # NATなし（最小運用）。必要になったらVPC Endpoint化 or NAT追加。
