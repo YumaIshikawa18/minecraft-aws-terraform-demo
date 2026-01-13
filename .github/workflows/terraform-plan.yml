@@ -1,12 +1,21 @@
 name: terraform-plan
 
 on:
+  push:
+    branches: [ "master" ]
+    paths:
+      - "environment/**"
+      - "modules/**"
+      - "lambda/**"
+      - ".github/workflows/**"
+
   pull_request:
     paths:
       - "environment/**"
       - "modules/**"
       - "lambda/**"
       - ".github/workflows/**"
+
   workflow_dispatch:
     inputs:
       target_ref:

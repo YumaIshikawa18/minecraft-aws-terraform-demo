@@ -1,13 +1,6 @@
 name: terraform-apply
 
 on:
-  push:
-    branches: [ "master" ]
-    paths:
-      - "environment/**"
-      - "modules/**"
-      - "lambda/**"
-      - ".github/workflows/**"
   workflow_dispatch:
     inputs:
       target_ref:
