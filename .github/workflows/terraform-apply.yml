@@ -2,7 +2,7 @@ name: terraform-apply
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
     paths:
       - "environment/**"
       - "modules/**"
@@ -14,10 +14,6 @@ on:
         description: "Checkout ref (branch/tag/commit). Empty = default branch"
         required: false
         default: ""
-      tfstate_key:
-        description: "S3 backend key"
-        required: false
-        default: "minecraft/terraform.tfstate"
       aws_region:
         description: "AWS region"
         required: false
@@ -48,7 +44,12 @@ jobs:
           echo "confirm_apply must be APPLY"
           exit 1
 
-      - name: Checkout
+      - name: Checkout (default)
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.target_ref == '' }}
+        uses: actions/checkout@v4
+
+      - name: Checkout (workflow_dispatch with ref)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.target_ref != '' }}
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.target_ref }}
@@ -65,7 +66,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ inputs.aws_region || 'ap-northeast-1' }}
+          aws-region: ${{ github.event_name == 'workflow_dispatch' && inputs.aws_region || 'ap-northeast-1' }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -74,14 +75,7 @@ jobs:
 
       - name: Terraform Init
         working-directory: environment
-        run: |
-          TFSTATE_KEY="${{ inputs.tfstate_key }}"
-          if [ -z "$TFSTATE_KEY" ]; then TFSTATE_KEY="minecraft/terraform.tfstate"; fi
-
-          terraform init \
-            -backend-config="bucket=${{ secrets.TFSTATE_BUCKET }}" \
-            -backend-config="key=${TFSTATE_KEY}" \
-            -backend-config="region=${{ inputs.aws_region || 'ap-northeast-1' }}"
+        run: terraform init
 
       - name: Terraform Apply
         working-directory: environment
