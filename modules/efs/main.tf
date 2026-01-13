@@ -4,11 +4,16 @@ resource "aws_efs_file_system" "this" {
 }
 
 resource "aws_efs_mount_target" "this" {
-  for_each        = toset(var.subnet_ids)
+  for_each = {
+    for idx, subnet_id in var.subnet_ids :
+    tostring(idx) => subnet_id
+  }
+
   file_system_id  = aws_efs_file_system.this.id
   subnet_id       = each.value
   security_groups = [var.efs_sg_id]
 }
+
 
 resource "aws_efs_access_point" "data" {
   file_system_id = aws_efs_file_system.this.id
