@@ -3,9 +3,6 @@ terraform {
   required_providers {
     aws = { source = "hashicorp/aws", version = "= 6.28.0" }
   }
-
-  # backendはworkflowで -backend-config で渡す（変数は使えないため）
-  backend "s3" {}
 }
 
 provider "aws" {
