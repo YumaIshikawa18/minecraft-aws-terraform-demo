@@ -82,15 +82,26 @@ export const handler = async (event, context) => {
         console.error("Lambda function name is not configured (AWS_LAMBDA_FUNCTION_NAME/context.functionName missing).");
         return json(500, { message: "Lambda function name is not configured." });
     }
-    await lambda.send(new InvokeCommand({
-        FunctionName: functionName,
-        InvocationType: "Event",
-        Payload: Buffer.from(JSON.stringify({
-            _async: true,
-            action: cmd,
-            size
-        }))
-    }));
+    try {
+        await lambda.send(new InvokeCommand({
+            FunctionName: functionName,
+            InvocationType: "Event",
+            Payload: Buffer.from(JSON.stringify({
+                _async: true,
+                action: cmd,
+                size
+            }))
+        }));
+    } catch (err) {
+        console.error("Failed to invoke async worker Lambda", err);
+        return json(200, {
+            type: 4,
+            data: {
+                content: "内部エラーが発生しました。しばらくしてから再試行してください。",
+                flags: 64
+            }
+        });
+    }
 
     // ★ Discordへは即返す（3秒以内）
     if (cmd === "start") {
