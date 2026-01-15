@@ -6,6 +6,10 @@ variable "ecs_sg_id" { type = string }
 
 variable "efs_id" { type = string }
 variable "efs_access_point_id" { type = string }
+variable "efs_file_system_arn" {
+  description = "ARN of the EFS file system used for IAM authorization."
+  type        = string
+}
 
 variable "minecraft_port" { type = number }
 

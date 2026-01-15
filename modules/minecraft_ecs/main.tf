@@ -23,6 +23,36 @@ resource "aws_iam_role" "task_execution" {
   assume_role_policy = data.aws_iam_policy_document.task_exec_assume.json
 }
 
+# Task Role（EFS IAM認可のために必須）
+resource "aws_iam_role" "task" {
+  name               = "${var.name_prefix}-ecs-task"
+  assume_role_policy = data.aws_iam_policy_document.task_exec_assume.json
+}
+
+# EFS IAM authorization 用の権限（Access Point利用時の典型）
+data "aws_iam_policy_document" "efs_client" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "elasticfilesystem:ClientMount",
+      "elasticfilesystem:ClientWrite"
+      # 必要なら追加：
+      # "elasticfilesystem:ClientRootAccess"
+    ]
+    resources = [var.efs_file_system_arn]
+  }
+}
+
+resource "aws_iam_policy" "efs_client" {
+  name   = "${var.name_prefix}-efs-client"
+  policy = data.aws_iam_policy_document.efs_client.json
+}
+
+resource "aws_iam_role_policy_attachment" "efs_client" {
+  role       = aws_iam_role.task.name
+  policy_arn = aws_iam_policy.efs_client.arn
+}
+
 resource "aws_iam_role_policy_attachment" "task_exec" {
   role       = aws_iam_role.task_execution.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
@@ -75,6 +105,7 @@ resource "aws_ecs_task_definition" "minecraft" {
   cpu                      = tostring(each.value.cpu)
   memory                   = tostring(each.value.memory)
   execution_role_arn       = aws_iam_role.task_execution.arn
+  task_role_arn            = aws_iam_role.task.arn
 
   volume {
     name = "efs-data"

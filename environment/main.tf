@@ -37,6 +37,7 @@ module "minecraft" {
   ecs_sg_id           = module.network.ecs_sg_id
   efs_id              = module.efs.efs_id
   efs_access_point_id = module.efs.efs_access_point_id
+  efs_file_system_arn = module.efs.efs_arn
 
   minecraft_port = var.minecraft_port
 
