@@ -60,7 +60,12 @@ export const handler = async (event, context) => {
 
     // … verify処理は省略（今のまま使ってOK）
 
-    const body = JSON.parse(rawBody);
+    let body;
+    try {
+        body = JSON.parse(rawBody);
+    } catch (e) {
+        return json(400, { error: "invalid JSON body" });
+    }
 
     // PING
     if (body.type === 1) return json(200, { type: 1 });
