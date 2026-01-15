@@ -16,7 +16,17 @@ export const handler = async (event, context) => {
     }
 
     // ---- ワーカーモード（自分自身が非同期で呼ばれた時）----
-    if (event && event._async === true) {
+    const isWorkerMode =
+        event &&
+        (
+            // 推奨: namespaced metadata か明示的フラグ
+            (event.customInvokeMetadata && event.customInvokeMetadata._async === true) ||
+            event.__workerMode === true ||
+            // 互換性のための旧フラグ（将来的に削除候補）
+            event._async === true
+        );
+
+    if (isWorkerMode) {
         const { action, size } = event;
 
         const clusterArn = process.env.ECS_CLUSTER_ARN;
