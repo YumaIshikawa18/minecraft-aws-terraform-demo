@@ -15,3 +15,7 @@ variable "sizes" {
     memory = number
   }))
 }
+
+variable "efs_file_system_arn" {
+  type = string
+}
