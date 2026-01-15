@@ -22,6 +22,9 @@ export const handler = async (event, context) => {
         const clusterArn = process.env.ECS_CLUSTER_ARN;
         const serviceName = process.env.ECS_SERVICE_NAME;
 
+        if (!clusterArn || !serviceName) {
+            return { ok: false, error: "Missing ECS configuration: ECS_CLUSTER_ARN or ECS_SERVICE_NAME is not set" };
+        }
         const taskDef =
             size === "large" ? process.env.TASKDEF_LARGE :
                 size === "medium" ? process.env.TASKDEF_MEDIUM :
