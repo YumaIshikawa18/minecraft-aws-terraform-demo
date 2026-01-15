@@ -17,5 +17,6 @@ variable "sizes" {
 }
 
 variable "efs_file_system_arn" {
-  type = string
+  description = "ARN of the EFS file system used for IAM authorization."
+  type        = string
 }
