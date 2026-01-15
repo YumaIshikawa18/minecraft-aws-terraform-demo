@@ -33,9 +33,9 @@ data "aws_iam_policy_document" "ecs_control" {
   }
 
   statement {
-    effect  = "Allow"
-    actions = ["iam:PassRole"]
-    resources = [var.ecs_task_execution_role_arn]
+    effect    = "Allow"
+    actions   = ["iam:PassRole"]
+    resources = var.ecs_passrole_arns
 
     condition {
       test     = "StringEquals"

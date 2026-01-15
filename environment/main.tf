@@ -48,10 +48,13 @@ module "minecraft" {
 module "iam_control" {
   source = "../modules/iam_control"
 
-  name_prefix                 = var.name_prefix
-  ecs_cluster_arn             = module.minecraft.ecs_cluster_arn
-  ecs_service_name            = module.minecraft.ecs_service_name
-  ecs_task_execution_role_arn = module.minecraft.task_execution_role_arn
+  name_prefix      = var.name_prefix
+  ecs_cluster_arn  = module.minecraft.ecs_cluster_arn
+  ecs_service_name = module.minecraft.ecs_service_name
+  ecs_passrole_arns = [
+    module.minecraft.task_execution_role_arn,
+    module.minecraft.task_role_arn,
+  ]
 }
 
 module "discord_control" {
