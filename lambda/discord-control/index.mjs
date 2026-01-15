@@ -77,7 +77,11 @@ export const handler = async (event, context) => {
     const size = sizeOpt?.value ?? "small";
 
     // ★ ここで自分自身を非同期Invoke（ECS操作はワーカーで実行）
-    const functionName = process.env.AWS_LAMBDA_FUNCTION_NAME;
+    const functionName = process.env.AWS_LAMBDA_FUNCTION_NAME ?? context.functionName;
+    if (!functionName) {
+        console.error("Lambda function name is not configured (AWS_LAMBDA_FUNCTION_NAME/context.functionName missing).");
+        return json(500, { message: "Lambda function name is not configured." });
+    }
     await lambda.send(new InvokeCommand({
         FunctionName: functionName,
         InvocationType: "Event",
