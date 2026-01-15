@@ -23,12 +23,12 @@ function json(statusCode, obj) {
  */
 function verifyDiscordSignature(rawBody, signature, timestamp, publicKey) {
     try {
-        const message = timestamp + rawBody;
-        const isValid = nacl.sign.detached.verify(
-            Buffer.from(message),
-            Buffer.from(signature, "hex"),
-            Buffer.from(publicKey, "hex")
-        );
+        // Construct message for verification: timestamp + body
+        const message = new Uint8Array(Buffer.from(timestamp + rawBody));
+        const sig = new Uint8Array(Buffer.from(signature, "hex"));
+        const key = new Uint8Array(Buffer.from(publicKey, "hex"));
+        
+        const isValid = nacl.sign.detached.verify(message, sig, key);
         return isValid;
     } catch (err) {
         console.error("Signature verification error:", err);
