@@ -1,108 +1,216 @@
+// lambda/discord-control/index.mjs
 import nacl from "tweetnacl";
-import { ECSClient, DescribeServicesCommand, UpdateServiceCommand } from "@aws-sdk/client-ecs";
+import { ECSClient, UpdateServiceCommand } from "@aws-sdk/client-ecs";
+import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 
-function hexToUint8(hex) {
-    return new Uint8Array(hex.match(/.{1,2}/g).map((b) => parseInt(b, 16)));
-}
-
-function verifyDiscordSignature({ publicKeyHex, signatureHex, timestamp, body }) {
-    const msg = new TextEncoder().encode(timestamp + body);
-    const sig = hexToUint8(signatureHex);
-    const pk  = hexToUint8(publicKeyHex);
-    return nacl.sign.detached.verify(msg, sig, pk);
-}
+// Reuse clients across invocations
+const ecs = new ECSClient({});
+const lambda = new LambdaClient({});
 
 function json(statusCode, obj) {
     return {
         statusCode,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(obj)
+        body: JSON.stringify(obj),
     };
 }
 
-export const handler = async (event) => {
-    // API Gateway HTTP API (payload v2.0)
-    const rawBody = event.body ?? "";
-    const headers = Object.fromEntries(Object.entries(event.headers ?? {}).map(([k, v]) => [k.toLowerCase(), v]));
+function verifyDiscordSignature(rawBody, signatureHex, timestamp, publicKeyHex) {
+    try {
+        const message = new Uint8Array(Buffer.from(timestamp + rawBody));
+        const sig = new Uint8Array(Buffer.from(signatureHex, "hex"));
+        const key = new Uint8Array(Buffer.from(publicKeyHex, "hex"));
+        return nacl.sign.detached.verify(message, sig, key);
+    } catch (err) {
+        console.error("Signature verification error:", err);
+        return false;
+    }
+}
+
+/**
+ * Extract worker payload robustly.
+ * - Self-invocation via Lambda Invoke may arrive as:
+ *   - an object (most common)
+ *   - a JSON string (rare)
+ *   - { body: "json-string" } (rare)
+ */
+function extractWorkerPayload(event) {
+    if (event == null) return null;
+
+    if (typeof event === "string") {
+        try {
+            return JSON.parse(event);
+        } catch {
+            return null;
+        }
+    }
+
+    if (typeof event === "object" && typeof event.body === "string") {
+        try {
+            return JSON.parse(event.body);
+        } catch {
+            // fallthrough
+        }
+    }
+
+    return event;
+}
+
+function discordEphemeral(content) {
+    return json(200, {
+        type: 4,
+        data: { content, flags: 64 },
+    });
+}
+
+export const handler = async (event, context) => {
+    // Prefer returning immediately; don't wait on open handles.
+    if (context && typeof context.callbackWaitsForEmptyEventLoop !== "undefined") {
+        context.callbackWaitsForEmptyEventLoop = false;
+    }
+
+    // ---- Worker mode (async self-invoked) ----
+    const workerPayload = extractWorkerPayload(event);
+    const isWorkerMode =
+        workerPayload &&
+        (workerPayload._async === true || workerPayload.__workerMode === true);
+
+    if (isWorkerMode) {
+        const action = workerPayload.action;
+        const size = workerPayload.size;
+
+        const clusterArn = process.env.ECS_CLUSTER_ARN;
+        const serviceName = process.env.ECS_SERVICE_NAME;
+
+        if (!clusterArn || !serviceName) {
+            console.error("Missing ECS_CLUSTER_ARN or ECS_SERVICE_NAME");
+            return { ok: false, error: "Missing ECS configuration" };
+        }
+
+        const taskDef =
+            size === "large"
+                ? process.env.TASKDEF_LARGE
+                : size === "medium"
+                    ? process.env.TASKDEF_MEDIUM
+                    : process.env.TASKDEF_SMALL;
+
+        try {
+            if (action === "start") {
+                if (!taskDef) {
+                    console.error(`Task definition not configured for size: ${size}`);
+                    return { ok: false, error: `Task definition not configured: ${size}` };
+                }
+
+                await ecs.send(
+                    new UpdateServiceCommand({
+                        cluster: clusterArn,
+                        service: serviceName,
+                        desiredCount: 1,
+                        taskDefinition: taskDef,
+                    })
+                );
+                return { ok: true };
+            }
+
+            if (action === "stop") {
+                await ecs.send(
+                    new UpdateServiceCommand({
+                        cluster: clusterArn,
+                        service: serviceName,
+                        desiredCount: 0,
+                    })
+                );
+                return { ok: true };
+            }
+
+            console.error("Unknown action:", action);
+            return { ok: false, error: "Unknown action" };
+        } catch (err) {
+            console.error("Worker failed:", err);
+            return { ok: false, error: "Worker failed" };
+        }
+    }
+
+    // ---- HTTP mode (Discord -> API Gateway -> Lambda) ----
+    const rawBody = event?.body ?? "";
+    const headers = Object.fromEntries(
+        Object.entries(event?.headers ?? {}).map(([k, v]) => [
+            k.toLowerCase(),
+            v,
+        ])
+    );
 
     const sig = headers["x-signature-ed25519"];
-    const ts  = headers["x-signature-timestamp"];
-
+    const ts = headers["x-signature-timestamp"];
     const publicKey = process.env.DISCORD_PUBLIC_KEY;
 
     if (!sig || !ts || !publicKey) {
+        // Discord expects a quick response; 401 is fine here.
         return json(401, { error: "missing signature headers or public key" });
     }
 
-    const ok = verifyDiscordSignature({
-        publicKeyHex: publicKey,
-        signatureHex: sig,
-        timestamp: ts,
-        body: rawBody
-    });
-
-    if (!ok) {
+    if (!verifyDiscordSignature(rawBody, sig, ts, publicKey)) {
+        console.error("Invalid Discord signature");
         return json(401, { error: "invalid request signature" });
     }
 
-    const body = JSON.parse(rawBody);
+    let body;
+    try {
+        body = JSON.parse(rawBody);
+    } catch (e) {
+        return json(400, { error: "invalid JSON body" });
+    }
 
     // Discord PING
     if (body.type === 1) {
         return json(200, { type: 1 });
     }
 
-    // Command
+    // Role check
     const memberRoles = body?.member?.roles ?? [];
     const allowedRole = process.env.ALLOWED_ROLE_ID;
 
     if (!allowedRole || !memberRoles.includes(allowedRole)) {
-        return json(200, {
-            type: 4,
-            data: { content: "権限がありません（許可ロールが必要）", flags: 64 }
-        });
+        return discordEphemeral("権限がありません（許可ロールが必要）");
     }
 
-    const name = body?.data?.name;
+    const commandName = body?.data?.name;
+    const sizeOpt = (body?.data?.options ?? []).find((o) => o.name === "size");
+    const size = sizeOpt?.value ?? "small";
 
-    const clusterArn = process.env.ECS_CLUSTER_ARN;
-    const serviceName = process.env.ECS_SERVICE_NAME;
-
-    const ecs = new ECSClient({});
-
-    if (name === "start") {
-        // size option（choice）
-        const opt = (body?.data?.options ?? []).find(o => o.name === "size");
-        const size = opt?.value ?? "small";
-
-        const taskDef =
-            size === "large" ? process.env.TASKDEF_LARGE :
-                size === "medium" ? process.env.TASKDEF_MEDIUM :
-                    process.env.TASKDEF_SMALL;
-
-        if (!taskDef) {
-            return json(200, { type: 4, data: { content: `task definitionが見つかりません: ${size}`, flags: 64 } });
-        }
-
-        await ecs.send(new UpdateServiceCommand({
-            cluster: clusterArn,
-            service: serviceName,
-            desiredCount: 1,
-            taskDefinition: taskDef
-        }));
-
-        return json(200, { type: 4, data: { content: `起動しました（size=${size}）`, flags: 64 } });
+    if (commandName !== "start" && commandName !== "stop") {
+        return discordEphemeral("未対応コマンドです");
     }
 
-    if (name === "stop") {
-        await ecs.send(new UpdateServiceCommand({
-            cluster: clusterArn,
-            service: serviceName,
-            desiredCount: 0
-        }));
-
-        return json(200, { type: 4, data: { content: "停止しました", flags: 64 } });
+    // Self-invoke asynchronously for long-running ECS operations
+    const functionName = process.env.AWS_LAMBDA_FUNCTION_NAME ?? context?.functionName;
+    if (!functionName) {
+        console.error("Missing function name (AWS_LAMBDA_FUNCTION_NAME / context.functionName)");
+        return discordEphemeral("内部エラーが発生しました。しばらくしてから再試行してください。");
     }
 
-    return json(200, { type: 4, data: { content: "未対応コマンドです", flags: 64 } });
+    try {
+        await lambda.send(
+            new InvokeCommand({
+                FunctionName: functionName,
+                InvocationType: "Event",
+                Payload: Buffer.from(
+                    JSON.stringify({
+                        _async: true,
+                        action: commandName,
+                        size,
+                    })
+                ),
+            })
+        );
+    } catch (err) {
+        console.error("Failed to invoke async worker:", err);
+        return discordEphemeral("内部エラーが発生しました。しばらくしてから再試行してください。");
+    }
+
+    // Immediate ACK to Discord (within 3 seconds)
+    if (commandName === "start") {
+        return discordEphemeral(`起動要求を受け付けました（size=${size}）`);
+    }
+    return discordEphemeral("停止要求を受け付けました");
 };
