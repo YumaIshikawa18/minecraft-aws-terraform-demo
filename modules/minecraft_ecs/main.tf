@@ -53,7 +53,6 @@ resource "aws_iam_role_policy_attachment" "efs_client" {
   policy_arn = aws_iam_policy.efs_client.arn
 }
 
-
 resource "aws_iam_role_policy_attachment" "task_exec" {
   role       = aws_iam_role.task_execution.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
