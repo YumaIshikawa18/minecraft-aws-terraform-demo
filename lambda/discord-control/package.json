@@ -4,6 +4,7 @@
   "type": "module",
   "dependencies": {
     "@aws-sdk/client-ecs": "^3.600.0",
+    "@aws-sdk/client-lambda": "^3.948.0",
     "tweetnacl": "^1.0.3"
   }
 }
