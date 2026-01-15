@@ -11,7 +11,9 @@ function json(statusCode, obj) {
 
 export const handler = async (event, context) => {
     // Lambdaが返した後にイベントループ待ちしない（レスポンス優先）
-    context.callbackWaitsForEmptyEventLoop = false;
+    if (context && typeof context.callbackWaitsForEmptyEventLoop !== "undefined") {
+        context.callbackWaitsForEmptyEventLoop = false;
+    }
 
     // ---- ワーカーモード（自分自身が非同期で呼ばれた時）----
     if (event && event._async === true) {
