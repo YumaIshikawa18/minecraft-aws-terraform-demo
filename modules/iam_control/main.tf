@@ -23,12 +23,25 @@ data "aws_iam_policy_document" "ecs_control" {
   statement {
     effect = "Allow"
     actions = [
+      "ecs:DescribeServices",
       "ecs:UpdateService"
     ]
     resources = [
       # UpdateServiceはService ARN指定がベストだが、ここは簡略化してクラスター配下を許可（後で絞る）
       "*"
     ]
+  }
+
+  statement {
+    effect  = "Allow"
+    actions = ["iam:PassRole"]
+    resources = [var.ecs_task_execution_role_arn]
+
+    condition {
+      test     = "StringEquals"
+      variable = "iam:PassedToService"
+      values   = ["ecs-tasks.amazonaws.com"]
+    }
   }
 
   statement {
