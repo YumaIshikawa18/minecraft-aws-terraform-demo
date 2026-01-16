@@ -30,7 +30,7 @@ async function getDiscordPublicKey() {
         const response = await ssm.send(command);
         cachedPublicKey = response.Parameter?.Value;
         
-        if (!cachedPublicKey) {
+        if (!cachedPublicKey || cachedPublicKey.trim() === '') {
             throw new Error("Discord public key not found in SSM Parameter Store");
         }
         
