@@ -101,8 +101,28 @@ GitHub Actionsでデプロイします：
 
 1. `.github/workflows/terraform-apply.yml`を実行
 2. `confirm_apply`に`APPLY`と入力
-3. デプロイ完了後、OutputsにAPI Gateway URLが表示される
+3. デプロイ完了後、AWS ConsoleでAPI Gateway URLを確認（下記参照）
 4. Discord Developer PortalでInteractions Endpoint URLを設定
+
+### 6. AWS ConsoleでAPI Gateway URLを確認
+
+Terraform Outputsには表示されないため、AWS Consoleで以下の手順で確認します：
+
+1. **AWSマネジメントコンソール**にログイン
+2. **リージョン**を`terraform apply`で使用したリージョン（デフォルト: `ap-northeast-1`）に切り替え
+3. **API Gateway**サービスを開く
+4. 左メニューから**HTTP APIs**を選択
+5. API名`${name_prefix}-discord-http`（例: `mc-discord-http`）を探す
+   - API IDがカッコ内に表示されます（例: `mc-discord-http...(a9fpt5u2ng)`）
+6. APIを選択し、**Stages**タブを開く
+   - デフォルトステージ（`$default`）のInvoke URLが表示されます
+   - URL形式: `https://{api_id}.execute-api.{region}.amazonaws.com`
+   - `{api_id}` 部分（例: `a9fpt5u2ng`）は、手順5で確認したAPI IDと一致します
+   
+**補足**:
+- `$default`ステージの場合、URLにステージ名は含まれません
+- エンドポイント設定は`POST /`です（Routes画面でも確認可能）
+- このURLをDiscord Developer PortalのInteractions Endpoint URLに設定します
 
 ## 🎯 使い方
 
