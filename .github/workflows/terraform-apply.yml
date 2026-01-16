@@ -3,10 +3,6 @@ name: terraform-apply
 on:
   workflow_dispatch:
     inputs:
-      target_ref:
-        description: "Checkout ref (branch/tag/commit). Empty = default branch"
-        required: false
-        default: ""
       aws_region:
         description: "AWS region"
         required: false
@@ -26,26 +22,27 @@ concurrency:
 jobs:
   apply:
     runs-on: ubuntu-latest
+    environment:
+      name: production
     defaults:
       run:
         shell: bash
 
     steps:
-      - name: Guard (workflow_dispatch only)
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.confirm_apply != 'APPLY' }}
+      - name: Guard (branch and confirmation validation)
         run: |
-          echo "confirm_apply must be APPLY"
-          exit 1
+          if [ "${{ github.ref_name }}" != "${{ github.event.repository.default_branch }}" ]; then
+            echo "This workflow can only be run from the default branch (${{ github.event.repository.default_branch }}). Current: ${{ github.ref_name }}"
+            exit 1
+          fi
 
-      - name: Checkout (default)
-        if: ${{ github.event_name != 'workflow_dispatch' || inputs.target_ref == '' }}
-        uses: actions/checkout@v4
+          if [ "${{ inputs.confirm_apply }}" != "APPLY" ]; then
+            echo "confirm_apply must be APPLY"
+            exit 1
+          fi
 
-      - name: Checkout (workflow_dispatch with ref)
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.target_ref != '' }}
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.target_ref }}
 
       - name: Build Lambda zip
         working-directory: lambda/discord-control
