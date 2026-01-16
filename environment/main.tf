@@ -69,10 +69,6 @@ module "discord_control" {
   # build成果物（workflowで生成）
   lambda_zip_path = var.lambda_zip_path
 
-  # Discord
-  discord_public_key = var.discord_public_key
-  allowed_role_id    = var.allowed_role_id
-
   # ECS対象
   ecs_cluster_arn      = module.minecraft.ecs_cluster_arn
   ecs_service_name     = module.minecraft.ecs_service_name
