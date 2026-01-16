@@ -106,7 +106,7 @@ GitHub Actionsでデプロイします：
 
 ### 6. AWS ConsoleでAPI Gateway URLを確認
 
-Terraform Outputsには表示されないため、AWS Consoleで以下の手順で確認します：
+セキュリティ上の理由でTerraform Outputsから除去されているため、AWS Consoleで以下の手順で確認します：
 
 1. **AWSマネジメントコンソール**にログイン
 2. **リージョン**を`terraform apply`で使用したリージョン（デフォルト: `ap-northeast-1`）に切り替え
@@ -144,7 +144,7 @@ NLB DNS名はAWSコンソールで確認できます（下記参照）。
 
 ### Network Load Balancer DNS名の確認方法
 
-Terraform Outputsには表示されないため、AWS Consoleで以下の手順で確認します：
+セキュリティ上の理由でTerraform Outputsから除去されているため、AWS Consoleで以下の手順で確認します：
 
 1. **AWSマネジメントコンソール**にログイン
 2. **リージョン**を`terraform apply`で使用したリージョン（デフォルト: `ap-northeast-1`）に切り替え
