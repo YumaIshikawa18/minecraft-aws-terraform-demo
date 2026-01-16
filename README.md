@@ -101,8 +101,28 @@ GitHub Actionsでデプロイします：
 
 1. `.github/workflows/terraform-apply.yml`を実行
 2. `confirm_apply`に`APPLY`と入力
-3. デプロイ完了後、OutputsにAPI Gateway URLが表示される
+3. デプロイ完了後、AWS ConsoleでAPI Gateway URLを確認（下記参照）
 4. Discord Developer PortalでInteractions Endpoint URLを設定
+
+### 6. AWS ConsoleでAPI Gateway URLを確認
+
+セキュリティ上の理由でTerraform Outputsから除去されているため、AWS Consoleで以下の手順で確認します：
+
+1. **AWSマネジメントコンソール**にログイン
+2. **リージョン**を`terraform apply`で使用したリージョン（デフォルト: `ap-northeast-1`）に切り替え
+3. **API Gateway**サービスを開く
+4. 左メニューから**HTTP APIs**を選択
+5. API名`[name_prefix]-discord-http`（例: `mc-discord-http`）を探す
+   - API IDがカッコ内に表示されます（例: `mc-discord-http (a9fpt5u2ng)`）
+6. APIを選択し、**Stages**タブを開く
+   - デフォルトステージ（`$default`）のInvoke URLが表示されます
+   - URL形式: `https://{api_id}.execute-api.{region}.amazonaws.com`
+   - `{api_id}` 部分（例: `a9fpt5u2ng`）は、手順5で確認したAPI IDと一致します
+   
+**補足**:
+- `$default`ステージの場合、URLにステージ名は含まれません
+- エンドポイント設定は`POST /`です（Routes画面でも確認可能）
+- このURLをDiscord Developer PortalのInteractions Endpoint URLに設定します
 
 ## 🎯 使い方
 
@@ -120,7 +140,25 @@ Network Load BalancerのDNS名を使用して接続：
 <NLB-DNS-NAME>:25565
 ```
 
-NLB DNS名はTerraform OutputsまたはAWSコンソールで確認できます。
+NLB DNS名はAWS Consoleで確認できます（下記参照）。
+
+### Network Load Balancer DNS名の確認方法
+
+セキュリティ上の理由でTerraform Outputsから除去されているため、AWS Consoleで以下の手順で確認します：
+
+1. **AWSマネジメントコンソール**にログイン
+2. **リージョン**を`terraform apply`で使用したリージョン（デフォルト: `ap-northeast-1`）に切り替え
+3. **EC2**サービスを開く
+4. 左メニューから**ロードバランサー**を選択
+5. ロードバランサー名`[name_prefix]-nlb`（例: `mc-nlb`）を探す
+   - タイプが「network」であることを確認
+6. ロードバランサーを選択し、**DNS名**をコピー
+   - 形式: `[name_prefix]-nlb-xxxxxxxxx.elb.[region].amazonaws.com`
+   - 例: `mc-nlb-1234567890.elb.ap-northeast-1.amazonaws.com`
+
+**補足**:
+- このDNS名にポート`:25565`を付けてMinecraftクライアントから接続します
+- サーバーが起動している場合のみ接続可能です（`/start`コマンドで起動）
 
 ## ⚙️ 設定
 
