@@ -11,6 +11,8 @@ const ssm = new SSMClient({});
 
 // Cache for Discord public key
 let cachedPublicKey = null;
+// Cache for allowed role ID
+let cachedAllowedRoleId = null;
 
 async function getDiscordPublicKey() {
     if (cachedPublicKey) {
@@ -37,6 +39,35 @@ async function getDiscordPublicKey() {
         return cachedPublicKey;
     } catch (err) {
         console.error("Failed to fetch Discord public key from SSM:", err);
+        throw err;
+    }
+}
+
+async function getAllowedRoleId() {
+    if (cachedAllowedRoleId) {
+        return cachedAllowedRoleId;
+    }
+
+    const paramName = process.env.ALLOWED_ROLE_ID_PARAM;
+    if (!paramName) {
+        throw new Error("ALLOWED_ROLE_ID_PARAM environment variable is not set");
+    }
+
+    try {
+        const command = new GetParameterCommand({
+            Name: paramName,
+            WithDecryption: true,
+        });
+        const response = await ssm.send(command);
+        cachedAllowedRoleId = response.Parameter?.Value;
+        
+        if (!cachedAllowedRoleId || cachedAllowedRoleId.trim() === '') {
+            throw new Error("Allowed role ID not found in SSM Parameter Store");
+        }
+        
+        return cachedAllowedRoleId;
+    } catch (err) {
+        console.error("Failed to fetch allowed role ID from SSM:", err);
         throw err;
     }
 }
@@ -210,7 +241,14 @@ export const handler = async (event, context) => {
 
     // Role check
     const memberRoles = body?.member?.roles ?? [];
-    const allowedRole = process.env.ALLOWED_ROLE_ID;
+    
+    let allowedRole;
+    try {
+        allowedRole = await getAllowedRoleId();
+    } catch (err) {
+        console.error("Failed to get allowed role ID:", err);
+        return json(500, { error: "internal server error" });
+    }
 
     if (!allowedRole || !memberRoles.includes(allowedRole)) {
         return discordEphemeral("権限がありません（許可ロールが必要）");

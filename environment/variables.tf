@@ -52,6 +52,8 @@ variable "discord_public_key" {
 }
 
 # Discordで許可するRole ID（このRoleを持つユーザーのみ/start /stop）
+# この値はSSM Parameter Storeに保存されます
 variable "allowed_role_id" {
-  type = string
+  type        = string
+  description = "Discord Allowed Role ID (will be stored in SSM Parameter Store)"
 }

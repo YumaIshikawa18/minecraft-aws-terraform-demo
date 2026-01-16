@@ -3,6 +3,7 @@
 discord_public_key = "78f4d8c6aac06ddd406816870b5afaaf13738b06df8f857370409aae3abbd919"
 
 # /start /stop を許可する Discord Role ID
+# この値はSSM Parameter Storeに保存されます
 allowed_role_id = "1460573468855767192"
 
 # Minecraft 接続を許可するCIDR

@@ -5,6 +5,13 @@ resource "aws_ssm_parameter" "discord_public_key" {
   value       = var.discord_public_key
 }
 
+resource "aws_ssm_parameter" "allowed_role_id" {
+  name        = "/${var.name_prefix}/discord/allowed-role-id"
+  description = "Discord Allowed Role ID"
+  type        = "SecureString"
+  value       = var.allowed_role_id
+}
+
 resource "aws_lambda_function" "this" {
   function_name = "${var.name_prefix}-discord-control"
   role          = var.lambda_role_arn
@@ -19,7 +26,7 @@ resource "aws_lambda_function" "this" {
   environment {
     variables = {
       DISCORD_PUBLIC_KEY_PARAM = aws_ssm_parameter.discord_public_key.name
-      ALLOWED_ROLE_ID          = var.allowed_role_id
+      ALLOWED_ROLE_ID_PARAM    = aws_ssm_parameter.allowed_role_id.name
 
       ECS_CLUSTER_ARN  = var.ecs_cluster_arn
       ECS_SERVICE_NAME = var.ecs_service_name
@@ -30,7 +37,10 @@ resource "aws_lambda_function" "this" {
     }
   }
 
-  depends_on = [aws_ssm_parameter.discord_public_key]
+  depends_on = [
+    aws_ssm_parameter.discord_public_key,
+    aws_ssm_parameter.allowed_role_id
+  ]
 }
 
 resource "aws_apigatewayv2_api" "http" {
