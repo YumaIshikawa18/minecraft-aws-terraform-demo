@@ -27,8 +27,9 @@ variable "minecraft_ops" {
 }
 
 variable "enable_whitelist" {
-  type    = bool
-  default = false
+  description = "Enable whitelist mode for the Minecraft server, restricting access to only whitelisted players."
+  type        = bool
+  default     = false
 }
 
 variable "minecraft_whitelist" {
