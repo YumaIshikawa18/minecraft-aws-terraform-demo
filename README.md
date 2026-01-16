@@ -54,8 +54,8 @@ GitHub ActionsがTerraformを実行するための基盤を作成します。
 
 ```bash
 cd bootstrap
-cp terraform.tfvars.example terraform.tfvars
-# terraform.tfvarsを編集（tfstate bucket名、GitHub repo名など）
+# terraform.tfvars を編集（必要な変数は variables.tf を参照）
+# 例：github_owner, github_repo, tfstate_bucket_name など
 terraform init
 terraform apply
 ```
@@ -82,20 +82,17 @@ terraform apply
 リポジトリのSettings > Secrets and variables > Actionsで以下を設定：
 
 - `AWS_ROLE_ARN` - Bootstrapで作成したIAMロールのARN
-- `DISCORD_PUBLIC_KEY` - Discord BotのPublic Key
-- `ALLOWED_ROLE_ID` - Discordで操作を許可するRole ID
 
 ### 4. 環境変数の設定
 
 ```bash
 cd environment
-cp terraform.tfvars.example terraform.tfvars
-# terraform.tfvarsを編集
+# terraform.tfvars を編集（必要な変数は variables.tf を参照）
 ```
 
 主な設定項目：
-- `discord_public_key` - Discord BotのPublic Key
-- `allowed_role_id` - 許可するDiscord Role ID
+- `discord_public_key` - Discord BotのPublic Key（Discord Developer Portalから取得）
+- `allowed_role_id` - 許可するDiscord Role ID（操作を許可するロールのID）
 - `allowed_cidr_blocks` - Minecraftサーバーへの接続を許可するCIDR（デフォルト: `0.0.0.0/0`）
 - `sizes` - サーバーサイズ別のCPU/メモリ設定
 
