@@ -140,7 +140,7 @@ Network Load BalancerのDNS名を使用して接続：
 <NLB-DNS-NAME>:25565
 ```
 
-NLB DNS名はAWSコンソールで確認できます（下記参照）。
+NLB DNS名はAWS Consoleで確認できます（下記参照）。
 
 ### Network Load Balancer DNS名の確認方法
 
