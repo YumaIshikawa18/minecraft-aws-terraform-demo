@@ -21,8 +21,9 @@ variable "sizes" {
 }
 
 variable "minecraft_ops" {
-  type    = list(string)
-  default = []
+  description = "List of Minecraft usernames to be granted operator (OP) privileges on the server."
+  type        = list(string)
+  default     = []
 }
 
 variable "enable_whitelist" {
