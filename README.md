@@ -112,8 +112,8 @@ Terraform Outputsには表示されないため、AWS Consoleで以下の手順�
 2. **リージョン**を`terraform apply`で使用したリージョン（デフォルト: `ap-northeast-1`）に切り替え
 3. **API Gateway**サービスを開く
 4. 左メニューから**HTTP APIs**を選択
-5. API名`${name_prefix}-discord-http`（例: `mc-discord-http`）を探す
-   - API IDがカッコ内に表示されます（例: `mc-discord-http...(a9fpt5u2ng)`）
+5. API名`[name_prefix]-discord-http`（例: `mc-discord-http`）を探す
+   - API IDがカッコ内に表示されます（例: `mc-discord-http (a9fpt5u2ng)`）
 6. APIを選択し、**Stages**タブを開く
    - デフォルトステージ（`$default`）のInvoke URLが表示されます
    - URL形式: `https://{api_id}.execute-api.{region}.amazonaws.com`
