@@ -140,7 +140,25 @@ Network Load BalancerのDNS名を使用して接続：
 <NLB-DNS-NAME>:25565
 ```
 
-NLB DNS名はTerraform OutputsまたはAWSコンソールで確認できます。
+NLB DNS名はAWSコンソールで確認できます（下記参照）。
+
+### Network Load Balancer DNS名の確認方法
+
+Terraform Outputsには表示されないため、AWS Consoleで以下の手順で確認します：
+
+1. **AWSマネジメントコンソール**にログイン
+2. **リージョン**を`terraform apply`で使用したリージョン（デフォルト: `ap-northeast-1`）に切り替え
+3. **EC2**サービスを開く
+4. 左メニューから**ロードバランサー**を選択
+5. ロードバランサー名`[name_prefix]-nlb`（例: `mc-nlb`）を探す
+   - タイプが「network」であることを確認
+6. ロードバランサーを選択し、**DNS名**をコピー
+   - 形式: `[name_prefix]-nlb-xxxxxxxxx.elb.[region].amazonaws.com`
+   - 例: `mc-nlb-1234567890.elb.ap-northeast-1.amazonaws.com`
+
+**補足**:
+- このDNS名にポート`:25565`を付けてMinecraftクライアントから接続します
+- サーバーが起動している場合のみ接続可能です（`/start`コマンドで起動）
 
 ## ⚙️ 設定
 
