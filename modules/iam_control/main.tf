@@ -54,6 +54,18 @@ data "aws_iam_policy_document" "ecs_control" {
       "arn:aws:lambda:*:*:function:${var.name_prefix}-discord-control"
     ]
   }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "ssm:GetParameter",
+      "ssm:GetParameters"
+    ]
+    resources = [
+      # Allow Lambda to read Discord public key from SSM Parameter Store
+      "arn:aws:ssm:*:*:parameter/${var.name_prefix}/discord/*"
+    ]
+  }
 }
 
 resource "aws_iam_policy" "ecs_control" {

@@ -2,10 +2,44 @@
 import nacl from "tweetnacl";
 import { ECSClient, UpdateServiceCommand } from "@aws-sdk/client-ecs";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
+import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
 
 // Reuse clients across invocations
 const ecs = new ECSClient({});
 const lambda = new LambdaClient({});
+const ssm = new SSMClient({});
+
+// Cache for Discord public key
+let cachedPublicKey = null;
+
+async function getDiscordPublicKey() {
+    if (cachedPublicKey) {
+        return cachedPublicKey;
+    }
+
+    const paramName = process.env.DISCORD_PUBLIC_KEY_PARAM;
+    if (!paramName) {
+        throw new Error("DISCORD_PUBLIC_KEY_PARAM environment variable is not set");
+    }
+
+    try {
+        const command = new GetParameterCommand({
+            Name: paramName,
+            WithDecryption: true,
+        });
+        const response = await ssm.send(command);
+        cachedPublicKey = response.Parameter?.Value;
+        
+        if (!cachedPublicKey) {
+            throw new Error("Discord public key not found in SSM Parameter Store");
+        }
+        
+        return cachedPublicKey;
+    } catch (err) {
+        console.error("Failed to fetch Discord public key from SSM:", err);
+        throw err;
+    }
+}
 
 function json(statusCode, obj) {
     return {
@@ -142,11 +176,19 @@ export const handler = async (event, context) => {
 
     const sig = headers["x-signature-ed25519"];
     const ts = headers["x-signature-timestamp"];
-    const publicKey = process.env.DISCORD_PUBLIC_KEY;
 
-    if (!sig || !ts || !publicKey) {
+    if (!sig || !ts) {
         // Discord expects a quick response; 401 is fine here.
-        return json(401, { error: "missing signature headers or public key" });
+        return json(401, { error: "missing signature headers" });
+    }
+
+    // Fetch public key from SSM Parameter Store
+    let publicKey;
+    try {
+        publicKey = await getDiscordPublicKey();
+    } catch (err) {
+        console.error("Failed to get Discord public key:", err);
+        return json(500, { error: "internal server error" });
     }
 
     if (!verifyDiscordSignature(rawBody, sig, ts, publicKey)) {

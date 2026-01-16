@@ -45,8 +45,10 @@ variable "lambda_zip_path" {
 }
 
 # Discord Interaction署名検証用Public Key（Discord Developer Portalから）
+# この値はSSM Parameter Storeに保存されます
 variable "discord_public_key" {
-  type = string
+  type        = string
+  description = "Discord Application Public Key (will be stored in SSM Parameter Store)"
 }
 
 # Discordで許可するRole ID（このRoleを持つユーザーのみ/start /stop）

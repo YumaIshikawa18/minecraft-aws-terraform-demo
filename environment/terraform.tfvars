@@ -1,4 +1,5 @@
 # Discord Application の Public Key（16進）
+# この値はSSM Parameter Storeに保存されます
 discord_public_key = "78f4d8c6aac06ddd406816870b5afaaf13738b06df8f857370409aae3abbd919"
 
 # /start /stop を許可する Discord Role ID

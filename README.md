@@ -91,6 +91,8 @@ cd environment
 
 主な設定項目：
 - `discord_public_key` - Discord BotのPublic Key（Discord Developer Portalから取得）
+  - **注意**: この値はTerraformによってSSM Parameter Storeに安全に保存されます
+  - パラメータパス: `/{name_prefix}/discord/public-key` （例: `/mc/discord/public-key`）
 - `allowed_role_id` - 許可するDiscord Role ID（操作を許可するロールのID）
 - `allowed_cidr_blocks` - Minecraftサーバーへの接続を許可するCIDR（デフォルト: `0.0.0.0/0`）
 - `sizes` - サーバーサイズ別のCPU/メモリ設定
@@ -178,6 +180,9 @@ sizes = {
 
 - `allowed_cidr_blocks` - 接続を許可するIPアドレス範囲を制限することを推奨
 - `allowed_role_id` - Discord上で特定のロールを持つユーザーのみ制御可能
+- `discord_public_key` - Discord BotのPublic KeyはAWS Systems Manager (SSM) Parameter Storeに暗号化して保存されます
+  - パラメータは`SecureString`タイプで保存され、AWS KMSによって暗号化されます
+  - Lambda関数は実行時にSSMからパラメータを取得します
 
 ## 🗂️ ディレクトリ構造
 

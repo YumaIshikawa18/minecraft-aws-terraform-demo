@@ -5,6 +5,7 @@
   "dependencies": {
     "@aws-sdk/client-ecs": "^3.948.0",
     "@aws-sdk/client-lambda": "^3.948.0",
+    "@aws-sdk/client-ssm": "^3.948.0",
     "tweetnacl": "^1.0.3"
   }
 }
