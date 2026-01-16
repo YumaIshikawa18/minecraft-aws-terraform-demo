@@ -43,6 +43,8 @@ module "minecraft" {
 
   # size別のCPU/メモリ（Fargate対応値にする）
   sizes = var.sizes
+
+  minecraft_ops = [var.minecraft_op_name]
 }
 
 module "iam_control" {

@@ -19,3 +19,21 @@ variable "sizes" {
     memory = number
   }))
 }
+
+variable "minecraft_ops" {
+  description = "List of Minecraft usernames to be granted operator (OP) privileges on the server."
+  type        = list(string)
+  default     = []
+}
+
+variable "enable_whitelist" {
+  description = "Enable whitelist mode for the Minecraft server, restricting access to only whitelisted players."
+  type        = bool
+  default     = false
+}
+
+variable "minecraft_whitelist" {
+  description = "List of Minecraft usernames to be added to the server whitelist when whitelist mode is enabled."
+  type        = list(string)
+  default     = []
+}
