@@ -126,6 +126,7 @@ resource "aws_ecs_task_definition" "minecraft" {
     environment = [
       { name = "EULA", value = "TRUE" },
       { name = "ONLINE_MODE", value = "TRUE" },
+      # RCONは後で true + Secret 参照にすると安全停止が作りやすい
       { name = "ENABLE_RCON", value = "false" },
 
       # OP
