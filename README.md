@@ -74,7 +74,6 @@ terraform apply
 5. Slash Commandsを登録：
    - `/start` - サーバーを起動
    - `/stop` - サーバーを停止
-   - `/resize` - サーバーサイズを変更
 6. Interactions Endpoint URLは後でAPI GatewayのURLを設定
 
 ### 3. GitHub Secretsの設定
@@ -112,7 +111,6 @@ GitHub Actionsでデプロイします：
 ```
 /start [size]     # サーバーを起動（size: small/medium/large、省略時はsmall）
 /stop             # サーバーを停止
-/resize [size]    # サーバーサイズを変更（size: small/medium/large）
 ```
 
 ### Minecraftクライアントから接続
@@ -189,21 +187,9 @@ sizes = {
 2. API GatewayのURLが正しく設定されているか確認
 3. Discord Public Keyが正しいか確認
 
-### Terraformエラー
-
-```bash
-cd environment
-terraform init -upgrade
-terraform plan
-```
-
 ## 📝 ライセンス
 
 このプロジェクトはデモ目的で作成されています。
-
-## 🤝 貢献
-
-Issue、Pull Requestを歓迎します！
 
 ## 参考リンク
 
