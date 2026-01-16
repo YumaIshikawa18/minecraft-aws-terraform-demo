@@ -91,7 +91,11 @@ cd environment
 
 主な設定項目：
 - `discord_public_key` - Discord BotのPublic Key（Discord Developer Portalから取得）
+  - **注意**: `terraform.tfvars`では"dummy"を設定し、`terraform apply`後にAWS ConsoleまたはCLIで実際の値をSSM Parameter Storeに手動で設定してください
+  - パラメータパス: `/{name_prefix}/discord/public-key` （例: `/mc/discord/public-key`）
 - `allowed_role_id` - 許可するDiscord Role ID（操作を許可するロールのID）
+  - **注意**: `terraform.tfvars`では"dummy"を設定し、`terraform apply`後にAWS ConsoleまたはCLIで実際の値をSSM Parameter Storeに手動で設定してください
+  - パラメータパス: `/{name_prefix}/discord/allowed-role-id` （例: `/mc/discord/allowed-role-id`）
 - `allowed_cidr_blocks` - Minecraftサーバーへの接続を許可するCIDR（デフォルト: `0.0.0.0/0`）
 - `sizes` - サーバーサイズ別のCPU/メモリ設定
 
@@ -101,10 +105,47 @@ GitHub Actionsでデプロイします：
 
 1. `.github/workflows/terraform-apply.yml`を実行
 2. `confirm_apply`に`APPLY`と入力
-3. デプロイ完了後、AWS ConsoleでAPI Gateway URLを確認（下記参照）
-4. Discord Developer PortalでInteractions Endpoint URLを設定
+3. デプロイ完了後、**SSM Parameter Storeに実際の値を設定**（下記参照）
+4. AWS ConsoleでAPI Gateway URLを確認（下記参照）
+5. Discord Developer PortalでInteractions Endpoint URLを設定
 
-### 6. AWS ConsoleでAPI Gateway URLを確認
+### 6. SSM Parameter Storeに実際の値を設定
+
+`terraform apply`後、以下の手順でSSM Parameter Storeに実際のDiscord認証情報を設定します：
+
+**AWS Consoleでの設定方法：**
+
+1. **AWSマネジメントコンソール**にログイン
+2. **リージョン**を`terraform apply`で使用したリージョン（デフォルト: `ap-northeast-1`）に切り替え
+3. **Systems Manager**サービスを開く
+4. 左メニューから**パラメータストア**を選択
+5. 以下のパラメータを更新：
+   - `/{name_prefix}/discord/public-key` （例: `/mc/discord/public-key`）
+     - 値: Discord Developer Portalから取得したPublic Key
+   - `/{name_prefix}/discord/allowed-role-id` （例: `/mc/discord/allowed-role-id`）
+     - 値: 許可するDiscord Role ID
+
+**AWS CLIでの設定方法：**
+
+```bash
+# Discord Public Keyを設定
+aws ssm put-parameter \
+  --name "/mc/discord/public-key" \
+  --value "YOUR_ACTUAL_PUBLIC_KEY_HERE" \
+  --type "SecureString" \
+  --overwrite \
+  --region ap-northeast-1
+
+# Allowed Role IDを設定
+aws ssm put-parameter \
+  --name "/mc/discord/allowed-role-id" \
+  --value "YOUR_ACTUAL_ROLE_ID_HERE" \
+  --type "SecureString" \
+  --overwrite \
+  --region ap-northeast-1
+```
+
+### 7. AWS ConsoleでAPI Gateway URLを確認
 
 セキュリティ上の理由でTerraform Outputsから除去されているため、AWS Consoleで以下の手順で確認します：
 
@@ -177,7 +218,12 @@ sizes = {
 ### セキュリティ
 
 - `allowed_cidr_blocks` - 接続を許可するIPアドレス範囲を制限することを推奨
+- `discord_public_key` - Discord BotのPublic KeyはAWS Systems Manager (SSM) Parameter Storeに暗号化して保存されます
+  - パラメータは`SecureString`タイプで保存され、AWS KMSによって暗号化されます
+  - Lambda関数は実行時にSSMからパラメータを取得します
 - `allowed_role_id` - Discord上で特定のロールを持つユーザーのみ制御可能
+  - この値もSSM Parameter Storeに暗号化して保存されます（`SecureString`タイプ）
+  - Lambda関数は実行時にSSMからパラメータを取得します
 
 ## 🗂️ ディレクトリ構造
 

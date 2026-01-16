@@ -43,13 +43,3 @@ variable "lambda_zip_path" {
   type    = string
   default = "../lambda/discord-control/dist/discord-control.zip"
 }
-
-# Discord Interaction署名検証用Public Key（Discord Developer Portalから）
-variable "discord_public_key" {
-  type = string
-}
-
-# Discordで許可するRole ID（このRoleを持つユーザーのみ/start /stop）
-variable "allowed_role_id" {
-  type = string
-}
