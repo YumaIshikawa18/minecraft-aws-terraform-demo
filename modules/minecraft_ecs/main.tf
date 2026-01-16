@@ -129,7 +129,7 @@ resource "aws_ecs_task_definition" "minecraft" {
       { name = "ENABLE_RCON", value = "false" },
 
       # OP
-      { name = "OPS", value = join("\n", var.minecraft_ops) },
+      { name = "OPS", value = join(",", var.minecraft_ops) },
 
       # Whitelist（今は使わないなら enable_whitelist=false のまま）
       { name = "ENABLE_WHITELIST", value = var.enable_whitelist ? "true" : "false" },
