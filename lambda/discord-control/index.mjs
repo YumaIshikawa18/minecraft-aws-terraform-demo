@@ -30,9 +30,9 @@ async function getDiscordPublicKey() {
             WithDecryption: true,
         });
         const response = await ssm.send(command);
-        const value = response.Parameter?.Value;
+        const value = response.Parameter?.Value?.trim();
         
-        if (!value || value.trim() === '') {
+        if (!value) {
             throw new Error("Discord public key not found in SSM Parameter Store");
         }
         
@@ -60,9 +60,9 @@ async function getAllowedRoleId() {
             WithDecryption: true,
         });
         const response = await ssm.send(command);
-        const value = response.Parameter?.Value;
+        const value = response.Parameter?.Value?.trim();
         
-        if (!value || value.trim() === '') {
+        if (!value) {
             throw new Error("Allowed role ID not found in SSM Parameter Store");
         }
         
