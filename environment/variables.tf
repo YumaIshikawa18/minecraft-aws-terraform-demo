@@ -33,6 +33,11 @@ variable "sizes" {
   }
 }
 
+variable "minecraft_op_name" {
+  type        = string
+  description = "OPにする自分のMinecraftユーザー名"
+}
+
 # workflowで作るzipのパス（environment/ からの相対）
 variable "lambda_zip_path" {
   type    = string

@@ -19,3 +19,18 @@ variable "sizes" {
     memory = number
   }))
 }
+
+variable "minecraft_ops" {
+  type    = list(string)
+  default = []
+}
+
+variable "enable_whitelist" {
+  type    = bool
+  default = false
+}
+
+variable "minecraft_whitelist" {
+  type    = list(string)
+  default = []
+}

@@ -82,19 +82,11 @@ resource "aws_lb_listener" "minecraft" {
   load_balancer_arn = aws_lb.nlb.arn
   port              = var.minecraft_port
   protocol          = "TCP"
+
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.minecraft.arn
   }
-}
-
-# EFS volume definition
-locals {
-  base_env = [
-    { name = "EULA", value = "TRUE" },
-    { name = "ONLINE_MODE", value = "TRUE" },
-    { name = "ENABLE_RCON", value = "false" } # 後でtrue+Secret参照にすると安全停止が作りやすい
-  ]
 }
 
 resource "aws_ecs_task_definition" "minecraft" {
@@ -130,7 +122,19 @@ resource "aws_ecs_task_definition" "minecraft" {
       protocol      = "tcp"
     }]
 
-    environment = local.base_env
+    # 分離なし：ここに全部直書き
+    environment = [
+      { name = "EULA", value = "TRUE" },
+      { name = "ONLINE_MODE", value = "TRUE" },
+      { name = "ENABLE_RCON", value = "false" },
+
+      # OP
+      { name = "OPS", value = join("\n", var.minecraft_ops) },
+
+      # Whitelist（今は使わないなら enable_whitelist=false のまま）
+      { name = "ENABLE_WHITELIST", value = var.enable_whitelist ? "true" : "false" },
+      { name = "WHITELIST", value = join("\n", var.minecraft_whitelist) },
+    ]
 
     mountPoints = [{
       sourceVolume  = "efs-data"

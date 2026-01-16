@@ -24,3 +24,5 @@ sizes = {
     memory = 8192
   }
 }
+
+minecraft_op_name = "Yuzukiku"
