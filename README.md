@@ -54,7 +54,7 @@ GitHub ActionsがTerraformを実行するための基盤を作成します。
 
 ```bash
 cd bootstrap
-# terraform.tfvars を作成または編集（必要な変数は variables.tf を参照）
+# terraform.tfvars を編集（必要な変数は variables.tf を参照）
 # 例：github_owner, github_repo, tfstate_bucket_name など
 terraform init
 terraform apply
