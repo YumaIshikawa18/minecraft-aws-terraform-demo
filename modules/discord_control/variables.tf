@@ -8,7 +8,10 @@ variable "discord_public_key" {
   type        = string
   description = "Discord Application Public Key (will be stored in SSM Parameter Store)"
 }
-variable "allowed_role_id" { type = string }
+variable "allowed_role_id" {
+  type        = string
+  description = "Allowed Discord role ID (will be stored in SSM Parameter Store)"
+}
 
 variable "ecs_cluster_arn" { type = string }
 variable "ecs_service_name" { type = string }
