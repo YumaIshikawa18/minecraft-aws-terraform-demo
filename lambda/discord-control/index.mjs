@@ -30,10 +30,15 @@ async function getDiscordPublicKey() {
             WithDecryption: true,
         });
         const response = await ssm.send(command);
-        const value = response.Parameter?.Value?.trim();
+        
+        if (!response.Parameter?.Value) {
+            throw new Error("Discord public key not found in SSM Parameter Store");
+        }
+        
+        const value = response.Parameter.Value.trim();
         
         if (!value) {
-            throw new Error("Discord public key not found in SSM Parameter Store");
+            throw new Error("Discord public key in SSM Parameter Store is empty or contains only whitespace");
         }
         
         cachedPublicKey = value;
@@ -60,10 +65,15 @@ async function getAllowedRoleId() {
             WithDecryption: true,
         });
         const response = await ssm.send(command);
-        const value = response.Parameter?.Value?.trim();
+        
+        if (!response.Parameter?.Value) {
+            throw new Error("Allowed role ID not found in SSM Parameter Store");
+        }
+        
+        const value = response.Parameter.Value.trim();
         
         if (!value) {
-            throw new Error("Allowed role ID not found in SSM Parameter Store");
+            throw new Error("Allowed role ID in SSM Parameter Store is empty or contains only whitespace");
         }
         
         cachedAllowedRoleId = value;
