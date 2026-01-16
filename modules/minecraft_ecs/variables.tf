@@ -33,6 +33,7 @@ variable "enable_whitelist" {
 }
 
 variable "minecraft_whitelist" {
-  type    = list(string)
-  default = []
+  description = "List of Minecraft usernames to be added to the server whitelist when whitelist mode is enabled."
+  type        = list(string)
+  default     = []
 }
