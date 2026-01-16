@@ -133,7 +133,7 @@ resource "aws_ecs_task_definition" "minecraft" {
 
       # Whitelist（今は使わないなら enable_whitelist=false のまま）
       { name = "ENABLE_WHITELIST", value = var.enable_whitelist ? "true" : "false" },
-      { name = "WHITELIST", value = join("\n", var.minecraft_whitelist) },
+      { name = "WHITELIST", value = join(",", var.minecraft_whitelist) },
     ]
 
     mountPoints = [{
