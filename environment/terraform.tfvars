@@ -1,10 +1,12 @@
 # Discord Application の Public Key（16進）
 # この値はSSM Parameter Storeに保存されます
-discord_public_key = "78f4d8c6aac06ddd406816870b5afaaf13738b06df8f857370409aae3abbd919"
+# 実際の値はterraform apply後に手動でSSMに設定してください
+discord_public_key = "dummy"
 
 # /start /stop を許可する Discord Role ID
 # この値はSSM Parameter Storeに保存されます
-allowed_role_id = "1460573468855767192"
+# 実際の値はterraform apply後に手動でSSMに設定してください
+allowed_role_id = "dummy"
 
 # Minecraft 接続を許可するCIDR
 allowed_cidr_blocks = [
