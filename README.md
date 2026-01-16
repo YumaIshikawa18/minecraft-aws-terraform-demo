@@ -4,13 +4,13 @@ AWS上でMinecraftサーバーをTerraformで構築し、Discordから制御で�
 
 ## 🎮 概要
 
-このプロジェクトは、AWS ECS Fargate上でMinecraftサーバーを稼働させ、Discordのスラッシュコマンドでサーバーの起動・停止・サイズ変更を行えるインフラストラクチャです。
+このプロジェクトは、AWS ECS Fargate上でMinecraftサーバーを稼働させ、Discordのスラッシュコマンドでサーバーの起動（サイズ指定可）・停止を行えるインフラストラクチャです。
 
 ### 主な特徴
 
 - **AWS ECS Fargate** - サーバーレスコンテナでMinecraftサーバーを実行
 - **Amazon EFS** - Minecraftのワールドデータを永続化
-- **Discord Bot統合** - スラッシュコマンドでサーバー制御（起動/停止/サイズ変更）
+- **Discord Bot統合** - スラッシュコマンドでサーバー制御（起動〔サイズ指定可〕/停止）
 - **動的スケーリング** - small/medium/largeの3サイズから選択可能
 - **GitHub Actions** - OIDC認証でセキュアなCI/CD
 - **Infrastructure as Code** - Terraformで全インフラを管理
