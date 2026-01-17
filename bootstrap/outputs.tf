@@ -1,7 +1,7 @@
 output "tfstate_bucket_name" {
-  value = aws_s3_bucket.tfstate.bucket
+  value = module.tfstate.bucket_name
 }
 
 output "gha_role_arn" {
-  value = aws_iam_role.gha_terraform.arn
+  value = module.gha_role.role_arn
 }

@@ -27,50 +27,89 @@ module "efs" {
   ecs_sg_id   = module.network.ecs_sg_id
 }
 
-module "minecraft" {
-  source = "../modules/minecraft_ecs"
+module "minecraft_log_group" {
+  source = "../modules/cloudwatch_log_group"
+
+  log_group_name    = "/${var.name_prefix}/minecraft"
+  retention_in_days = 14
+}
+
+module "minecraft_task_iam" {
+  source = "../modules/iam_ecs_task"
+
+  name_prefix         = var.name_prefix
+  efs_file_system_arn = module.efs.efs_arn
+}
+
+module "minecraft_lb" {
+  source = "../modules/elb_network"
+
+  name_prefix       = var.name_prefix
+  vpc_id            = module.network.vpc_id
+  public_subnet_ids = module.network.public_subnet_ids
+  port              = var.minecraft_port
+}
+
+module "minecraft_ecs" {
+  source = "../modules/ecs_service"
 
   name_prefix         = var.name_prefix
   aws_region          = var.aws_region
-  vpc_id              = module.network.vpc_id
   public_subnet_ids   = module.network.public_subnet_ids
   ecs_sg_id           = module.network.ecs_sg_id
   efs_id              = module.efs.efs_id
   efs_access_point_id = module.efs.efs_access_point_id
-  efs_file_system_arn = module.efs.efs_arn
+  minecraft_port      = var.minecraft_port
+  sizes               = var.sizes
+  minecraft_ops       = [var.minecraft_op_name]
 
-  minecraft_port = var.minecraft_port
+  log_group_name          = module.minecraft_log_group.log_group_name
+  task_execution_role_arn = module.minecraft_task_iam.task_execution_role_arn
+  task_role_arn           = module.minecraft_task_iam.task_role_arn
+  target_group_arn        = module.minecraft_lb.target_group_arn
 
-  # size別のCPU/メモリ（Fargate対応値にする）
-  sizes = var.sizes
-
-  minecraft_ops = [var.minecraft_op_name]
+  depends_on = [module.minecraft_lb]
 }
 
 module "iam_control" {
   source = "../modules/iam_control"
 
   name_prefix      = var.name_prefix
-  ecs_cluster_arn  = module.minecraft.ecs_cluster_arn
-  ecs_service_name = module.minecraft.ecs_service_name
+  ecs_cluster_arn  = module.minecraft_ecs.ecs_cluster_arn
+  ecs_service_name = module.minecraft_ecs.ecs_service_name
   ecs_passrole_arns = [
-    module.minecraft.task_execution_role_arn,
-    module.minecraft.task_role_arn,
+    module.minecraft_task_iam.task_execution_role_arn,
+    module.minecraft_task_iam.task_role_arn,
   ]
 }
 
-module "discord_control" {
-  source = "../modules/discord_control"
+module "discord_ssm" {
+  source = "../modules/ssm_parameters"
+
+  name_prefix        = var.name_prefix
+  discord_public_key = var.discord_public_key
+  allowed_role_id    = var.allowed_role_id
+}
+
+module "discord_lambda" {
+  source = "../modules/lambda_function"
 
   name_prefix     = var.name_prefix
-  aws_region      = var.aws_region
   lambda_role_arn = module.iam_control.lambda_role_arn
-
-  # build成果物（workflowで生成）
   lambda_zip_path = var.lambda_zip_path
 
-  # ECS対象
-  ecs_cluster_arn      = module.minecraft.ecs_cluster_arn
-  ecs_service_name     = module.minecraft.ecs_service_name
-  taskdef_arns_by_size = module.minecraft.taskdef_arns_by_size
+  discord_public_key_param_name = module.discord_ssm.discord_public_key_name
+  allowed_role_id_param_name    = module.discord_ssm.allowed_role_id_name
+
+  ecs_cluster_arn      = module.minecraft_ecs.ecs_cluster_arn
+  ecs_service_name     = module.minecraft_ecs.ecs_service_name
+  taskdef_arns_by_size = module.minecraft_ecs.taskdef_arns_by_size
+}
+
+module "discord_api" {
+  source = "../modules/apigateway_http"
+
+  name_prefix          = var.name_prefix
+  lambda_invoke_arn    = module.discord_lambda.lambda_invoke_arn
+  lambda_function_name = module.discord_lambda.lambda_function_name
 }

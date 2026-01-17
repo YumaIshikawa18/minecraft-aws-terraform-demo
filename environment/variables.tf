@@ -13,14 +13,11 @@ variable "minecraft_port" {
   default = 25565
 }
 
-# NLBはSGを持たないので、ECSタスクSGに「プレイヤーの送信元CIDR」を許可する
 variable "allowed_cidr_blocks" {
   type    = list(string)
-  default = ["0.0.0.0/0"] # まず動かすならこれ。落ち着いたら自宅IP等に絞るの推奨
+  default = ["0.0.0.0/0"]
 }
 
-# size別Fargate CPU/Memory（例：small/medium/large）
-# cpu: 256/512/1024/2048/4096 ... のようなFargate対応値
 variable "sizes" {
   type = map(object({
     cpu    = number
@@ -38,7 +35,18 @@ variable "minecraft_op_name" {
   description = "OPにする自分のMinecraftユーザー名"
 }
 
-# workflowで作るzipのパス（environment/ からの相対）
+variable "discord_public_key" {
+  type      = string
+  sensitive = true
+  default   = "dummy"
+}
+
+variable "allowed_role_id" {
+  type      = string
+  sensitive = true
+  default   = "dummy"
+}
+
 variable "lambda_zip_path" {
   type    = string
   default = "../lambda/discord-control/dist/discord-control.zip"
