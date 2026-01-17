@@ -91,10 +91,10 @@ cd environment
 
 主な設定項目：
 - `discord_public_key` - Discord BotのPublic Key（Discord Developer Portalから取得）
-  - **注意**: `terraform.tfvars`では"dummy"を設定し、`terraform apply`後にAWS ConsoleまたはCLIで実際の値をSSM Parameter Storeに手動で設定してください
+  - **注意**: `terraform apply`後にAWS ConsoleまたはCLIで実際の値をSSM Parameter Storeに手動で設定してください
   - パラメータパス: `/{name_prefix}/discord/public-key` （例: `/mc/discord/public-key`）
 - `allowed_role_id` - 許可するDiscord Role ID（操作を許可するロールのID）
-  - **注意**: `terraform.tfvars`では"dummy"を設定し、`terraform apply`後にAWS ConsoleまたはCLIで実際の値をSSM Parameter Storeに手動で設定してください
+  - **注意**:`terraform apply`後にAWS ConsoleまたはCLIで実際の値をSSM Parameter Storeに手動で設定してください
   - パラメータパス: `/{name_prefix}/discord/allowed-role-id` （例: `/mc/discord/allowed-role-id`）
 - `allowed_cidr_blocks` - Minecraftサーバーへの接続を許可するCIDR（デフォルト: `0.0.0.0/0`）
 - `sizes` - サーバーサイズ別のCPU/メモリ設定
