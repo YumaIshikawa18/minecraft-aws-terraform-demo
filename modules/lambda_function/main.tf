@@ -1,7 +1,7 @@
 resource "aws_lambda_function" "this" {
   function_name = "${var.name_prefix}-discord-control"
   role          = var.lambda_role_arn
-  runtime       = "nodejs20.x"
+  runtime       = "nodejs24.x"
   handler       = "index.handler"
 
   filename         = var.lambda_zip_path
