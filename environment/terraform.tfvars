@@ -6,15 +6,15 @@ allowed_cidr_blocks = [
 # サイズ定義（必要なら調整）
 sizes = {
   small = {
-    cpu    = 2048
+    cpu    = 4096
     memory = 4096
   }
   medium = {
-    cpu    = 2048
+    cpu    = 4096
     memory = 8192
   }
   large = {
-    cpu    = 4096
+    cpu    = 8192
     memory = 16384
   }
 }
