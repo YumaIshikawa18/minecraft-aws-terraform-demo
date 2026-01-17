@@ -63,7 +63,7 @@ module "minecraft_ecs" {
   sizes               = var.sizes
   minecraft_ops       = [var.minecraft_op_name]
 
-  log_group_name         = module.minecraft_log_group.log_group_name
+  log_group_name          = module.minecraft_log_group.log_group_name
   task_execution_role_arn = module.minecraft_task_iam.task_execution_role_arn
   task_role_arn           = module.minecraft_task_iam.task_role_arn
   target_group_arn        = module.minecraft_lb.target_group_arn
@@ -86,15 +86,15 @@ module "iam_control" {
 module "discord_ssm" {
   source = "../modules/ssm_parameters"
 
-  name_prefix         = var.name_prefix
-  discord_public_key  = var.discord_public_key
-  allowed_role_id     = var.allowed_role_id
+  name_prefix        = var.name_prefix
+  discord_public_key = var.discord_public_key
+  allowed_role_id    = var.allowed_role_id
 }
 
 module "discord_lambda" {
   source = "../modules/lambda_function"
 
-  name_prefix = var.name_prefix
+  name_prefix     = var.name_prefix
   lambda_role_arn = module.iam_control.lambda_role_arn
   lambda_zip_path = var.lambda_zip_path
 
