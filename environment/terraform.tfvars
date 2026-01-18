@@ -22,5 +22,5 @@ sizes = {
 minecraft_op_name = "Yuzukiku"
 
 # Discord設定（本番では適切な値に置き換え）
-discord_public_key = "dummy"
-allowed_role_id    = "dummy"
+discord_public_key_name = "mc/discord/public-key"
+allowed_role_id_name    = "mc/discord/allowed-role-id"

@@ -83,12 +83,18 @@ module "iam_control" {
   ]
 }
 
-module "discord_ssm" {
+module "discord_public_key" {
   source = "../modules/ssm_parameters"
 
-  name_prefix        = var.name_prefix
-  discord_public_key = var.discord_public_key
-  allowed_role_id    = var.allowed_role_id
+  name = var.discord_public_key_name
+  value = var.discord_public_key
+}
+
+module "discord_allowed_role_id" {
+  source = "../modules/ssm_parameters"
+
+  name = var.allowed_role_id_name
+  value = var.allowed_role_id
 }
 
 module "discord_lambda" {
@@ -98,8 +104,8 @@ module "discord_lambda" {
   lambda_role_arn = module.iam_control.lambda_role_arn
   lambda_zip_path = var.lambda_zip_path
 
-  discord_public_key_param_name = module.discord_ssm.discord_public_key_name
-  allowed_role_id_param_name    = module.discord_ssm.allowed_role_id_name
+  discord_public_key_param_name = module.discord_public_key.ssm_parameter_name
+  allowed_role_id_param_name    = module.discord_allowed_role_id.ssm_parameter_name
 
   ecs_cluster_arn      = module.minecraft_ecs.ecs_cluster_arn
   ecs_service_name     = module.minecraft_ecs.ecs_service_name

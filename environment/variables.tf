@@ -35,6 +35,14 @@ variable "minecraft_op_name" {
   description = "OPにする自分のMinecraftユーザー名"
 }
 
+variable "discord_public_key_name" {
+  type      = string
+}
+
+variable "allowed_role_id_name" {
+  type      = string
+}
+
 variable "discord_public_key" {
   type      = string
   sensitive = true
