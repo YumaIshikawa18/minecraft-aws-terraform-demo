@@ -2,7 +2,7 @@ import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
 
 const ssm = new SSMClient({});
 
-// キャッシュ（Lambdaコンテナの再利用時に効く）
+// Cache for Lambda container reuse
 let cachedWebhookUrl = null;
 
 async function getWebhookUrl() {
@@ -59,7 +59,7 @@ function buildMessage(event) {
         ].join("\n");
     }
 
-    // それ以外は通知しない想定（念のためログに残せるようメッセージは作る）
+    // Other statuses not notified (message created for logging purposes)
     return [
         "ℹ️ ECS task state changed",
         `- lastStatus: ${status}`,
@@ -78,13 +78,15 @@ async function postToDiscordWebhook(webhookUrl, content) {
 
     if (!resp.ok) {
         const body = await resp.text().catch(() => "");
-        throw new Error(`Discord webhook failed: ${resp.status} ${resp.statusText} body=${body}`);
+        throw new Error(
+            `Discord webhook failed: ${resp.status} ${resp.statusText} body=${body}`
+        );
     }
 }
 
 export const handler = async (event) => {
     try {
-        // EventBridge から来る想定（ECS Task State Change）
+        // Expected from EventBridge (ECS Task State Change)
         const detailType = event?.["detail-type"];
         if (detailType !== "ECS Task State Change") {
             console.log("Ignore event (detail-type mismatch):", detailType);
@@ -92,13 +94,14 @@ export const handler = async (event) => {
         }
 
         const status = event?.detail?.lastStatus;
+
         const notifyRunning = (process.env.NOTIFY_ON_RUNNING ?? "true") === "true";
         const notifyStopped = (process.env.NOTIFY_ON_STOPPED ?? "true") === "true";
 
         if (status === "RUNNING" && !notifyRunning) return { ignored: true };
         if (status === "STOPPED" && !notifyStopped) return { ignored: true };
 
-        // RUNNING/STOPPED以外は基本無視（ただしログは出す）
+        // Ignore statuses other than RUNNING/STOPPED (but log them)
         if (status !== "RUNNING" && status !== "STOPPED") {
             console.log("Ignore status:", status);
             return { ignored: true };
@@ -107,15 +110,22 @@ export const handler = async (event) => {
         const webhookUrl = await getWebhookUrl();
         const message = buildMessage(event);
 
-        console.log("Posting to Discord webhook:", { status, group: event?.detail?.group, taskArn: event?.detail?.taskArn });
-        await postToDiscordWebhook(webhookUrl, message);
+        console.log("Posting to Discord webhook:", {
+            status,
+            group: event?.detail?.group,
+            taskArn: event?.detail?.taskArn,
+        });
 
+        await postToDiscordWebhook(webhookUrl, message);
         return { ok: true };
     } catch (error) {
         console.error("Error in ECS task notify handler:", {
             message: error?.message ?? String(error),
             name: error?.name,
+            stack: error?.stack,
         });
-        return { ok: false, error: error?.message ?? String(error) };
+
+        // Make it a failed invocation so the issue is visible (and retriable if configured).
+        throw error;
     }
 };
