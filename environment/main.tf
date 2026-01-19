@@ -1,14 +1,3 @@
-terraform {
-  required_version = "= 1.14.3"
-  required_providers {
-    aws = { source = "hashicorp/aws", version = "= 6.28.0" }
-  }
-}
-
-provider "aws" {
-  region = var.aws_region
-}
-
 module "network" {
   source = "../modules/network"
 
@@ -25,13 +14,6 @@ module "efs" {
   subnet_ids  = module.network.private_subnet_ids
   efs_sg_id   = module.network.efs_sg_id
   ecs_sg_id   = module.network.ecs_sg_id
-}
-
-module "minecraft_log_group" {
-  source = "../modules/cloudwatch_log_group"
-
-  log_group_name    = "/${var.name_prefix}/minecraft"
-  retention_in_days = 14
 }
 
 module "minecraft_task_iam" {
@@ -63,7 +45,6 @@ module "minecraft_ecs" {
   sizes               = var.sizes
   minecraft_ops       = [var.minecraft_op_name]
 
-  log_group_name          = module.minecraft_log_group.log_group_name
   task_execution_role_arn = module.minecraft_task_iam.task_execution_role_arn
   task_role_arn           = module.minecraft_task_iam.task_role_arn
   target_group_arn        = module.minecraft_lb.target_group_arn
@@ -83,23 +64,36 @@ module "iam_control" {
   ]
 }
 
-module "discord_ssm" {
+module "discord_public_key" {
   source = "../modules/ssm_parameters"
 
-  name_prefix        = var.name_prefix
-  discord_public_key = var.discord_public_key
-  allowed_role_id    = var.allowed_role_id
+  name  = var.discord_public_key_name
+  value = var.discord_public_key
+}
+
+module "discord_allowed_role_id" {
+  source = "../modules/ssm_parameters"
+
+  name  = var.allowed_role_id_name
+  value = var.allowed_role_id
+}
+
+module "discord_webhook_url_param" {
+  source = "../modules/ssm_parameters"
+
+  name  = var.discord_webhook_url_param_name
+  value = var.discord_webhook_url_param
 }
 
 module "discord_lambda" {
-  source = "../modules/lambda_function"
+  source = "../modules/discord_control"
 
   name_prefix     = var.name_prefix
   lambda_role_arn = module.iam_control.lambda_role_arn
-  lambda_zip_path = var.lambda_zip_path
+  lambda_zip_path = var.lambda_discord_control_zip_path
 
-  discord_public_key_param_name = module.discord_ssm.discord_public_key_name
-  allowed_role_id_param_name    = module.discord_ssm.allowed_role_id_name
+  discord_public_key_param_name = module.discord_public_key.ssm_parameter_name
+  allowed_role_id_param_name    = module.discord_allowed_role_id.ssm_parameter_name
 
   ecs_cluster_arn      = module.minecraft_ecs.ecs_cluster_arn
   ecs_service_name     = module.minecraft_ecs.ecs_service_name
@@ -113,3 +107,21 @@ module "discord_api" {
   lambda_invoke_arn    = module.discord_lambda.lambda_invoke_arn
   lambda_function_name = module.discord_lambda.lambda_function_name
 }
+
+module "ecs_task_state_notify" {
+  source = "../modules/ecs_task_state_notify"
+
+  aws_region  = var.aws_region
+  name_prefix = var.name_prefix
+
+  cluster_arn   = module.minecraft_ecs.ecs_cluster_arn
+  service_group = "service:${module.minecraft_ecs.ecs_service_name}"
+
+  discord_webhook_url_param_name = module.discord_webhook_url_param.ssm_parameter_name
+
+  notify_on_running = true
+  notify_on_stopped = true
+
+  lambda_zip_path = var.lambda_ecs_task_notify_zip_path
+}
+

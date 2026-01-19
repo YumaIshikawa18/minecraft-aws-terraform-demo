@@ -44,13 +44,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build Lambda zip
+      - name: Build Lambda zip (discord-control)
         working-directory: lambda/discord-control
         run: |
           npm ci
           rm -rf dist
           mkdir -p dist
           zip -r dist/discord-control.zip index.mjs node_modules package.json
+
+      - name: Build Lambda zip (ecs-task-notify)
+        working-directory: lambda/ecs-task-notify
+        run: |
+          npm ci
+          rm -rf dist
+          mkdir -p dist
+          zip -r dist/ecs-task-notify.zip index.mjs node_modules package.json
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v5

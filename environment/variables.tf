@@ -1,21 +1,17 @@
 variable "aws_region" {
-  type    = string
-  default = "ap-northeast-1"
+  type = string
 }
 
 variable "name_prefix" {
-  type    = string
-  default = "mc"
+  type = string
 }
 
 variable "minecraft_port" {
-  type    = number
-  default = 25565
+  type = number
 }
 
 variable "allowed_cidr_blocks" {
-  type    = list(string)
-  default = ["0.0.0.0/0"]
+  type = list(string)
 }
 
 variable "sizes" {
@@ -23,16 +19,23 @@ variable "sizes" {
     cpu    = number
     memory = number
   }))
-  default = {
-    small  = { cpu = 1024, memory = 2048 }
-    medium = { cpu = 2048, memory = 4096 }
-    large  = { cpu = 4096, memory = 8192 }
-  }
 }
 
 variable "minecraft_op_name" {
   type        = string
   description = "OPにする自分のMinecraftユーザー名"
+}
+
+variable "discord_public_key_name" {
+  type = string
+}
+
+variable "allowed_role_id_name" {
+  type = string
+}
+
+variable "discord_webhook_url_param_name" {
+  type = string
 }
 
 variable "discord_public_key" {
@@ -47,7 +50,18 @@ variable "allowed_role_id" {
   default   = "dummy"
 }
 
-variable "lambda_zip_path" {
-  type    = string
-  default = "../lambda/discord-control/dist/discord-control.zip"
+variable "discord_webhook_url_param" {
+  type      = string
+  sensitive = true
+  default   = "dummy"
+}
+
+variable "lambda_discord_control_zip_path" {
+  type        = string
+  description = "Path to the deployment ZIP file for the Discord control Lambda function, relative to the directory where Terraform is run."
+}
+
+variable "lambda_ecs_task_notify_zip_path" {
+  type        = string
+  description = "Path to the deployment ZIP file for the ECS task notify Lambda function, relative to the directory where Terraform is run."
 }
