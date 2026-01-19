@@ -29,44 +29,16 @@ async function getWebhookUrl() {
     return url;
 }
 
-function buildMessage(event) {
-    const detail = event?.detail ?? {};
-    const status = detail.lastStatus ?? "UNKNOWN";
-    const desired = detail.desiredStatus ?? "UNKNOWN";
-    const clusterArn = detail.clusterArn ?? "UNKNOWN";
-    const group = detail.group ?? "UNKNOWN";
-    const taskArn = detail.taskArn ?? "UNKNOWN";
+function buildSimpleMessage(event) {
+    const status = event?.detail?.lastStatus;
 
     if (status === "RUNNING") {
-        return [
-            "✅ Minecraft server task is RUNNING",
-            `- group: ${group}`,
-            `- task: ${taskArn}`,
-            `- cluster: ${clusterArn}`,
-        ].join("\n");
+        return "✅ サーバー起動開始しました。数分後にサーバーに接続できます。";
     }
-
     if (status === "STOPPED") {
-        const stoppedReason = detail.stoppedReason ?? "UNKNOWN";
-        const stopCode = detail.stopCode ?? "UNKNOWN";
-        return [
-            "🛑 Minecraft server task is STOPPED",
-            `- group: ${group}`,
-            `- task: ${taskArn}`,
-            `- desired: ${desired}`,
-            `- stopCode: ${stopCode}`,
-            `- reason: ${stoppedReason}`,
-        ].join("\n");
+        return "🛑 サーバー停止しました。";
     }
-
-    // Other statuses not notified (message created for logging purposes)
-    return [
-        "ℹ️ ECS task state changed",
-        `- lastStatus: ${status}`,
-        `- desiredStatus: ${desired}`,
-        `- group: ${group}`,
-        `- task: ${taskArn}`,
-    ].join("\n");
+    return null; // ignore others
 }
 
 async function postToDiscordWebhook(webhookUrl, content) {
@@ -93,25 +65,17 @@ export const handler = async (event) => {
             return { ignored: true };
         }
 
-        const status = event?.detail?.lastStatus;
-
-        const notifyRunning = (process.env.NOTIFY_ON_RUNNING ?? "true") === "true";
-        const notifyStopped = (process.env.NOTIFY_ON_STOPPED ?? "true") === "true";
-
-        if (status === "RUNNING" && !notifyRunning) return { ignored: true };
-        if (status === "STOPPED" && !notifyStopped) return { ignored: true };
-
-        // Ignore statuses other than RUNNING/STOPPED (but log them)
-        if (status !== "RUNNING" && status !== "STOPPED") {
-            console.log("Ignore status:", status);
+        const message = buildSimpleMessage(event);
+        if (!message) {
+            console.log("Ignore status:", event?.detail?.lastStatus);
             return { ignored: true };
         }
 
         const webhookUrl = await getWebhookUrl();
-        const message = buildMessage(event);
 
+        // ログも最小限に（必要なら削ってOK）
         console.log("Posting to Discord webhook:", {
-            status,
+            status: event?.detail?.lastStatus,
             group: event?.detail?.group,
             taskArn: event?.detail?.taskArn,
         });
@@ -124,8 +88,6 @@ export const handler = async (event) => {
             name: error?.name,
             stack: error?.stack,
         });
-
-        // Make it a failed invocation so the issue is visible (and retriable if configured).
         throw error;
     }
 };
