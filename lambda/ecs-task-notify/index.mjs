@@ -83,31 +83,39 @@ async function postToDiscordWebhook(webhookUrl, content) {
 }
 
 export const handler = async (event) => {
-    // EventBridge から来る想定（ECS Task State Change）
-    const detailType = event?.["detail-type"];
-    if (detailType !== "ECS Task State Change") {
-        console.log("Ignore event (detail-type mismatch):", detailType);
-        return { ignored: true };
+    try {
+        // EventBridge から来る想定（ECS Task State Change）
+        const detailType = event?.["detail-type"];
+        if (detailType !== "ECS Task State Change") {
+            console.log("Ignore event (detail-type mismatch):", detailType);
+            return { ignored: true };
+        }
+
+        const status = event?.detail?.lastStatus;
+        const notifyRunning = (process.env.NOTIFY_ON_RUNNING ?? "true") === "true";
+        const notifyStopped = (process.env.NOTIFY_ON_STOPPED ?? "true") === "true";
+
+        if (status === "RUNNING" && !notifyRunning) return { ignored: true };
+        if (status === "STOPPED" && !notifyStopped) return { ignored: true };
+
+        // RUNNING/STOPPED以外は基本無視（ただしログは出す）
+        if (status !== "RUNNING" && status !== "STOPPED") {
+            console.log("Ignore status:", status);
+            return { ignored: true };
+        }
+
+        const webhookUrl = await getWebhookUrl();
+        const message = buildMessage(event);
+
+        console.log("Posting to Discord webhook:", { status, group: event?.detail?.group, taskArn: event?.detail?.taskArn });
+        await postToDiscordWebhook(webhookUrl, message);
+
+        return { ok: true };
+    } catch (error) {
+        console.error("Error in ECS task notify handler:", {
+            message: error?.message ?? String(error),
+            name: error?.name,
+        });
+        return { ok: false, error: error?.message ?? String(error) };
     }
-
-    const status = event?.detail?.lastStatus;
-    const notifyRunning = (process.env.NOTIFY_ON_RUNNING ?? "true") === "true";
-    const notifyStopped = (process.env.NOTIFY_ON_STOPPED ?? "true") === "true";
-
-    if (status === "RUNNING" && !notifyRunning) return { ignored: true };
-    if (status === "STOPPED" && !notifyStopped) return { ignored: true };
-
-    // RUNNING/STOPPED以外は基本無視（ただしログは出す）
-    if (status !== "RUNNING" && status !== "STOPPED") {
-        console.log("Ignore status:", status);
-        return { ignored: true };
-    }
-
-    const webhookUrl = await getWebhookUrl();
-    const message = buildMessage(event);
-
-    console.log("Posting to Discord webhook:", { status, group: event?.detail?.group, taskArn: event?.detail?.taskArn });
-    await postToDiscordWebhook(webhookUrl, message);
-
-    return { ok: true };
 };
