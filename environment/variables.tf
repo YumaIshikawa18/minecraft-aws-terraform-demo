@@ -57,9 +57,11 @@ variable "discord_webhook_url_param" {
 }
 
 variable "lambda_discord_control_zip_path" {
-  type = string
+  type        = string
+  description = "Path to the deployment ZIP file for the Discord control Lambda function, relative to the directory where Terraform is run."
 }
 
 variable "lambda_ecs_task_notify_zip_path" {
-  type = string
+  type        = string
+  description = "Path to the deployment ZIP file for the ECS task notify Lambda function, relative to the directory where Terraform is run."
 }
