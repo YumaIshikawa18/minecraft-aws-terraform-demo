@@ -2,7 +2,7 @@ locals {
   function_name = "${var.name_prefix}-ecs-task-notify"
 
   // EventBridge event pattern: ECS Task State Change
-  // detail-type は AWS 公式で "ECS Task State Change" :contentReference[oaicite:3]{index=3}
+  // EventBridge detail-type for ECS task state changes (official AWS event type)
   event_pattern_running = jsonencode({
     "source" : ["aws.ecs"],
     "detail-type" : ["ECS Task State Change"],
