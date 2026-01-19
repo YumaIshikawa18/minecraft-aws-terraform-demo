@@ -33,10 +33,10 @@ function buildSimpleMessage(event) {
     const status = event?.detail?.lastStatus;
 
     if (status === "RUNNING") {
-        return "✅ サーバー起動開始しました";
+        return "✅ サーバー起動開始しました。数分後にサーバーに接続できます。";
     }
     if (status === "STOPPED") {
-        return "🛑 サーバー停止しました";
+        return "🛑 サーバー停止しました。";
     }
     return null; // ignore others
 }
