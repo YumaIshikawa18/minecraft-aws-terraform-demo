@@ -78,12 +78,19 @@ module "discord_allowed_role_id" {
   value = var.allowed_role_id
 }
 
+module "discord_webhook_url_param" {
+  source = "../modules/ssm_parameters"
+
+  name  = var.discord_webhook_url_param_name
+  value = var.discord_webhook_url_param
+}
+
 module "discord_lambda" {
   source = "../modules/discord_control"
 
   name_prefix     = var.name_prefix
   lambda_role_arn = module.iam_control.lambda_role_arn
-  lambda_zip_path = var.lambda_zip_path
+  lambda_zip_path = var.lambda_discord_control_zip_path
 
   discord_public_key_param_name = module.discord_public_key.ssm_parameter_name
   allowed_role_id_param_name    = module.discord_allowed_role_id.ssm_parameter_name
@@ -100,3 +107,20 @@ module "discord_api" {
   lambda_invoke_arn    = module.discord_lambda.lambda_invoke_arn
   lambda_function_name = module.discord_lambda.lambda_function_name
 }
+
+module "ecs_task_state_notify" {
+  source = "../modules/ecs_task_state_notify"
+
+  name_prefix = var.name_prefix
+
+  cluster_arn   = module.minecraft_ecs.ecs_cluster_arn
+  service_group = module.minecraft_ecs.ecs_service_group
+
+  discord_webhook_url_param_name = module.discord_webhook_url_param.ssm_parameter_name
+
+  notify_on_running = true
+  notify_on_stopped = true
+
+  lambda_zip_path = var.lambda_ecs_task_notify_zip_path
+}
+
