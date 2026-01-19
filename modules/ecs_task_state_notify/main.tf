@@ -31,7 +31,7 @@ resource "aws_iam_role_policy" "lambda" {
       {
         Effect   = "Allow",
         Action   = ["ssm:GetParameter"],
-        Resource = "arn:aws:ssm:*:*:parameter${replace(var.discord_webhook_url_param_name, "/^\\//", "/")}"
+        Resource = "arn:aws:ssm:${data.aws_region}:${data.aws_caller_identity.current.account_id}:parameter${replace(var.discord_webhook_url_param_name, "/^\\//", "/")}"
       }
     ]
   })
