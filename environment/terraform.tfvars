@@ -26,8 +26,9 @@ sizes = {
 minecraft_op_name = "Yuzukiku"
 
 # Discord設定（本番では適切な値に置き換え）
-discord_public_key_name = "mc/discord/public-key"
-allowed_role_id_name    = "mc/discord/allowed-role-id"
+discord_public_key_name        = "/mc/discord/public-key"
+allowed_role_id_name           = "/mc/discord/allowed-role-id"
+discord_webhook_url_param_name = "/mc/discord/webhook-url"
 
 lambda_discord_control_zip_path = "../lambda/discord-control/dist/discord-control.zip"
 lambda_ecs_task_notify_zip_path = "../lambda/ecs-task-notify/dist/ecs-task-notify.zip"
