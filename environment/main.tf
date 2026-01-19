@@ -111,6 +111,7 @@ module "discord_api" {
 module "ecs_task_state_notify" {
   source = "../modules/ecs_task_state_notify"
 
+  aws_region  = var.aws_region
   name_prefix = var.name_prefix
 
   cluster_arn   = module.minecraft_ecs.ecs_cluster_arn
