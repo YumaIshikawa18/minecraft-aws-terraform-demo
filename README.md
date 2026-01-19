@@ -11,6 +11,7 @@ AWS上でMinecraftサーバーをTerraformで構築し、Discordから制御で�
 - **AWS ECS Fargate** - サーバーレスコンテナでMinecraftサーバーを実行
 - **Amazon EFS** - Minecraftのワールドデータを永続化
 - **Discord Bot統合** - スラッシュコマンドでサーバー制御（起動〔サイズ指定可〕/停止）
+- **Discord Webhook通知** - サーバーの起動・停止時にDiscordへ自動通知
 - **動的スケーリング** - small/medium/largeの3サイズから選択可能
 - **GitHub Actions** - OIDC認証でセキュアなCI/CD
 - **Infrastructure as Code** - Terraformで全インフラを管理
@@ -25,8 +26,12 @@ API Gateway (HTTP API)
 Lambda Function (Discord Control)
     ↓
 ECS Service (Minecraft Server on Fargate)
-    ↓
-EFS (World Data Storage)
+    ↓                      ↓
+EFS (World Data Storage)  EventBridge (Task State Change)
+                          ↓
+                          Lambda Function (ECS Task Notify)
+                          ↓
+                          Discord Webhook (起動・停止通知)
 ```
 
 ### 主要コンポーネント
@@ -35,8 +40,10 @@ EFS (World Data Storage)
 - **ECS Cluster** - FargateタスクとしてMinecraftサーバーを実行
 - **Network Load Balancer** - Minecraftクライアントからの接続を受け付け
 - **EFS** - ワールドデータの永続化ストレージ
-- **Lambda** - Discord InteractionエンドポイントとECS制御
+- **Lambda (Discord Control)** - Discord InteractionエンドポイントとECS制御
+- **Lambda (ECS Task Notify)** - ECSタスクの状態変更をDiscordに通知
 - **API Gateway** - Lambda用のHTTPエンドポイント
+- **EventBridge** - ECSタスクの状態変更イベントをキャッチし、Lambda関数をトリガー
 
 ## 📋 前提条件
 
@@ -75,6 +82,10 @@ terraform apply
    - `/start` - サーバーを起動
    - `/stop` - サーバーを停止
 6. Interactions Endpoint URLは後でAPI GatewayのURLを設定
+7. **Webhook URLを作成**（サーバー起動・停止通知用）：
+   - 通知を受け取りたいDiscordチャンネルの設定を開く
+   - 「連携サービス」→「ウェブフック」→「新しいウェブフック」を作成
+   - Webhook URLをコピーしてメモ（後でSSM Parameter Storeに設定）
 
 ### 3. GitHub Secretsの設定
 
@@ -96,6 +107,9 @@ cd environment
 - `allowed_role_id` - 許可するDiscord Role ID（操作を許可するロールのID）
   - **注意**:`terraform apply`後にAWS ConsoleまたはCLIで実際の値をSSM Parameter Storeに手動で設定してください
   - パラメータパス: `/{name_prefix}/discord/allowed-role-id` （例: `/mc/discord/allowed-role-id`）
+- `discord_webhook_url_param_name` - Discord Webhook URLのSSMパラメータ名（デフォルト: `/{name_prefix}/discord/webhook-url`）
+  - **注意**: `terraform apply`後にAWS ConsoleまたはCLIで実際の値をSSM Parameter Storeに手動で設定してください
+  - パラメータパス: `/{name_prefix}/discord/webhook-url` （例: `/mc/discord/webhook-url`）
 - `allowed_cidr_blocks` - Minecraftサーバーへの接続を許可するCIDR（デフォルト: `0.0.0.0/0`）
 - `sizes` - サーバーサイズ別のCPU/メモリ設定
 
@@ -124,6 +138,8 @@ GitHub Actionsでデプロイします：
      - 値: Discord Developer Portalから取得したPublic Key
    - `/{name_prefix}/discord/allowed-role-id` （例: `/mc/discord/allowed-role-id`）
      - 値: 許可するDiscord Role ID
+   - `/{name_prefix}/discord/webhook-url` （例: `/mc/discord/webhook-url`）
+     - 値: Discord Webhookから取得したWebhook URL
 
 **AWS CLIでの設定方法：**
 
@@ -140,6 +156,14 @@ aws ssm put-parameter \
 aws ssm put-parameter \
   --name "/mc/discord/allowed-role-id" \
   --value "YOUR_ACTUAL_ROLE_ID_HERE" \
+  --type "SecureString" \
+  --overwrite \
+  --region ap-northeast-1
+
+# Discord Webhook URLを設定
+aws ssm put-parameter \
+  --name "/mc/discord/webhook-url" \
+  --value "YOUR_DISCORD_WEBHOOK_URL_HERE" \
   --type "SecureString" \
   --overwrite \
   --region ap-northeast-1
@@ -173,6 +197,10 @@ aws ssm put-parameter \
 /start [size]     # サーバーを起動（size: small/medium/large、省略時はsmall）
 /stop             # サーバーを停止
 ```
+
+サーバーの起動・停止時には、設定したDiscordチャンネルに自動的に通知が送信されます：
+- ✅ サーバー起動開始時：「サーバー起動開始しました。数分後にサーバーに接続できます。」
+- 🛑 サーバー停止時：「サーバー停止しました。」
 
 ### Minecraftクライアントから接続
 
@@ -224,22 +252,27 @@ sizes = {
 - `allowed_role_id` - Discord上で特定のロールを持つユーザーのみ制御可能
   - この値もSSM Parameter Storeに暗号化して保存されます（`SecureString`タイプ）
   - Lambda関数は実行時にSSMからパラメータを取得します
+- `discord_webhook_url` - Discord Webhook URLもSSM Parameter Storeに暗号化して保存されます
+  - パラメータは`SecureString`タイプで保存され、AWS KMSによって暗号化されます
+  - Lambda関数（通知用）は実行時にSSMからパラメータを取得します
 
 ## 🗂️ ディレクトリ構造
 
 ```
 .
-├── bootstrap/           # 初期セットアップ（S3, IAM, GitHub OIDC）
-├── environment/         # メインのTerraform構成
+├── bootstrap/              # 初期セットアップ（S3, IAM, GitHub OIDC）
+├── environment/            # メインのTerraform構成
 ├── lambda/
-│   └── discord-control/ # Discord制御用Lambda関数
-├── modules/             # Terraformモジュール
-│   ├── discord_control/ # Discord統合
-│   ├── efs/            # EFS設定
-│   ├── iam_control/    # IAMロール・ポリシー
-│   ├── minecraft_ecs/  # ECS/Fargate Minecraft設定
-│   └── network/        # VPC、サブネット、セキュリティグループ
-└── .github/workflows/  # GitHub Actions CI/CD
+│   ├── discord-control/    # Discord制御用Lambda関数
+│   └── ecs-task-notify/    # ECSタスク状態通知用Lambda関数
+├── modules/                # Terraformモジュール
+│   ├── discord_control/    # Discord統合
+│   ├── ecs_task_state_notify/ # ECSタスク状態変更通知
+│   ├── efs/               # EFS設定
+│   ├── iam_control/       # IAMロール・ポリシー
+│   ├── minecraft_ecs/     # ECS/Fargate Minecraft設定
+│   └── network/           # VPC、サブネット、セキュリティグループ
+└── .github/workflows/     # GitHub Actions CI/CD
 ```
 
 ## 💰 コスト見積もり
