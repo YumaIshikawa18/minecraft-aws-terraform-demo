@@ -45,7 +45,7 @@ resource "aws_lambda_function" "this" {
   handler = "index.handler"
 
   filename         = var.lambda_zip_path
-  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+  source_code_hash = filebase64sha256(var.lambda_zip_path)
 
   timeout     = var.lambda_timeout_seconds
   memory_size = var.lambda_memory_mb
