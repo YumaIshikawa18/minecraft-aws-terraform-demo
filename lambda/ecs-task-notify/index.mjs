@@ -72,7 +72,7 @@ function buildMessage(event) {
 async function postToDiscordWebhook(webhookUrl, content) {
     const resp = await fetch(webhookUrl, {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content }),
     });
 
