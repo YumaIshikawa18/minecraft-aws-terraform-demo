@@ -114,7 +114,7 @@ module "ecs_task_state_notify" {
   name_prefix = var.name_prefix
 
   cluster_arn   = module.minecraft_ecs.ecs_cluster_arn
-  service_group = module.minecraft_ecs.ecs_service_group
+  service_group = "service:${module.minecraft_ecs.ecs_service_name}"
 
   discord_webhook_url_param_name = module.discord_webhook_url_param.ssm_parameter_name
 
