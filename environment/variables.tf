@@ -36,11 +36,11 @@ variable "minecraft_op_name" {
 }
 
 variable "discord_public_key_name" {
-  type      = string
+  type = string
 }
 
 variable "allowed_role_id_name" {
-  type      = string
+  type = string
 }
 
 variable "discord_public_key" {

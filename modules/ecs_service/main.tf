@@ -53,7 +53,7 @@ resource "aws_ecs_task_definition" "minecraft" {
     logConfiguration = {
       logDriver = "awslogs"
       options = {
-        awslogs-group         = var.log_group_name
+        awslogs-group         = aws_cloudwatch_log_group.this.name
         awslogs-region        = var.aws_region
         awslogs-stream-prefix = "minecraft"
       }
@@ -80,4 +80,9 @@ resource "aws_ecs_service" "this" {
     container_name   = "minecraft"
     container_port   = var.minecraft_port
   }
+}
+
+resource "aws_cloudwatch_log_group" "this" {
+  name              = "${var.name_prefix}/minecraft"
+  retention_in_days = 14
 }

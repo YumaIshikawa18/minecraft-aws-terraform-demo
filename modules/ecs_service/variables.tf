@@ -33,7 +33,6 @@ variable "minecraft_whitelist" {
   default     = []
 }
 
-variable "log_group_name" { type = string }
 variable "task_execution_role_arn" { type = string }
 variable "task_role_arn" { type = string }
 variable "target_group_arn" { type = string }

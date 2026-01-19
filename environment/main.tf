@@ -1,14 +1,3 @@
-terraform {
-  required_version = "= 1.14.3"
-  required_providers {
-    aws = { source = "hashicorp/aws", version = "= 6.28.0" }
-  }
-}
-
-provider "aws" {
-  region = var.aws_region
-}
-
 module "network" {
   source = "../modules/network"
 
@@ -25,13 +14,6 @@ module "efs" {
   subnet_ids  = module.network.private_subnet_ids
   efs_sg_id   = module.network.efs_sg_id
   ecs_sg_id   = module.network.ecs_sg_id
-}
-
-module "minecraft_log_group" {
-  source = "../modules/cloudwatch_log_group"
-
-  log_group_name    = "/${var.name_prefix}/minecraft"
-  retention_in_days = 14
 }
 
 module "minecraft_task_iam" {
@@ -63,7 +45,6 @@ module "minecraft_ecs" {
   sizes               = var.sizes
   minecraft_ops       = [var.minecraft_op_name]
 
-  log_group_name          = module.minecraft_log_group.log_group_name
   task_execution_role_arn = module.minecraft_task_iam.task_execution_role_arn
   task_role_arn           = module.minecraft_task_iam.task_role_arn
   target_group_arn        = module.minecraft_lb.target_group_arn
@@ -86,19 +67,19 @@ module "iam_control" {
 module "discord_public_key" {
   source = "../modules/ssm_parameters"
 
-  name = var.discord_public_key_name
+  name  = var.discord_public_key_name
   value = var.discord_public_key
 }
 
 module "discord_allowed_role_id" {
   source = "../modules/ssm_parameters"
 
-  name = var.allowed_role_id_name
+  name  = var.allowed_role_id_name
   value = var.allowed_role_id
 }
 
 module "discord_lambda" {
-  source = "../modules/lambda_function"
+  source = "../modules/discord_control"
 
   name_prefix     = var.name_prefix
   lambda_role_arn = module.iam_control.lambda_role_arn
