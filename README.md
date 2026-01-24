@@ -237,9 +237,9 @@ NLB DNS名はAWS Consoleで確認できます（下記参照）。
 
 ```hcl
 sizes = {
-  small  = { cpu = 1024, memory = 2048 }   # 1vCPU, 2GB RAM
-  medium = { cpu = 2048, memory = 4096 }   # 2vCPU, 4GB RAM
-  large  = { cpu = 4096, memory = 8192 }   # 4vCPU, 8GB RAM
+  small  = { cpu = 2048, memory = 8192  }   # 2vCPU, 8GB RAM
+  medium = { cpu = 4096, memory = 16384 }   # 4vCPU, 16GB RAM
+  large  = { cpu = 8192, memory = 32768 }   # 8vCPU, 32GB RAM
 }
 ```
 
